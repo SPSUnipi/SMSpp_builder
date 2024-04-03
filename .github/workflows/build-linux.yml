@@ -1,0 +1,101 @@
+name: build-linux
+
+on: [push, pull_request]
+
+jobs:
+  debug:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: 'true'
+
+      - name: Update submodules
+        run: |
+            git submodule sync --recursive
+            git submodule update --init --recursive
+
+      - name: Install dependencies
+        run: |
+            sudo apt install build-essential cmake git
+            sudo apt install libboost-dev
+            sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev
+            sudo apt install libnetcdf-c++4-dev
+            sudo apt install libeigen3-dev
+            sudo apt install libgfortran-7-dev libtbb2-dev
+            sudo apt install coinor-libcoinutils-dev
+            sudo apt install libbz2-dev liblapack-dev libopenblas-dev
+
+      - name: install highs
+        run: |
+            git clone https://github.com/ERGO-Code/HiGHS.git
+            cd HiGHS
+            mkdir build
+            cd build
+            cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/opt/HiGHS
+            cmake --build .
+            cd ..
+      - name: install coinbrew
+        run: |
+            curl -O https://raw.githubusercontent.com/coin-or/coinbrew/master/coinbrew
+            chmod u+x coinbrew
+            ./coinbrew build CoinUtils --latest-release \
+                --skip-dependencies \
+                --prefix=/opt/coin-or \
+                --tests=none
+
+        
+
+#       - name: Configure CMake
+#         shell: bash
+#         working-directory: ${{runner.workspace}}/build
+#         run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Debug -DFAST_BUILD=OFF
+
+#       - name: Build
+#         working-directory: ${{runner.workspace}}/build
+#         shell: bash
+#         # Execute the build.  You can specify a specific target with "--target <NAME>"
+#         run: |
+#           cmake --build . --parallel --config Debug
+
+#       - name: Test
+#         working-directory: ${{runner.workspace}}/build
+#         shell: bash
+#         # Execute tests defined by the CMake configuration.
+#         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+#         run: ctest --parallel 2 --timeout 300 --output-on-failure 
+
+#   release:
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       matrix:
+#         os: [ubuntu-latest]
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Create Build Environment
+#         run: cmake -E make_directory ${{runner.workspace}}/build
+
+#       - name: Configure CMake
+#         shell: bash
+#         working-directory: ${{runner.workspace}}/build
+#         run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release -DFAST_BUILD=OFF
+
+#       - name: Build
+#         working-directory: ${{runner.workspace}}/build
+#         shell: bash
+#         # Execute the build.  You can specify a specific target with "--target <NAME>"
+#         run: |
+#           cmake --build . --parallel --config Release
+
+#       - name: Test
+#         working-directory: ${{runner.workspace}}/build
+#         shell: bash
+#         # Execute tests defined by the CMake configuration.
+#         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+#         run: ctest --parallel 2 --timeout 300 --output-on-failure -C Release
