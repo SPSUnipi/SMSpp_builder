@@ -37,8 +37,9 @@ jobs:
             cd HiGHS
             mkdir build
             cd build
-            cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/opt/HiGHS
+            cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/opt/HiGHS ..
             cmake --build .
+            cmake --install .
             cd ..
 
       - name: install coinbrew
