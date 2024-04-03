@@ -27,7 +27,7 @@ jobs:
             sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev
             sudo apt install libnetcdf-c++4-dev
             sudo apt install libeigen3-dev
-            sudo apt install libgfortran-7-dev libtbb2-dev
+            sudo apt install gfortran libtbb2-dev
             sudo apt install coinor-libcoinutils-dev
             sudo apt install libbz2-dev liblapack-dev libopenblas-dev
 
@@ -40,6 +40,7 @@ jobs:
             cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/opt/HiGHS
             cmake --build .
             cd ..
+
       - name: install coinbrew
         run: |
             curl -O https://raw.githubusercontent.com/coin-or/coinbrew/master/coinbrew
@@ -48,6 +49,15 @@ jobs:
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
                 --tests=none
+        
+      - name: install gurobi
+        run: |
+            wget https://packages.gurobi.com/11.0/gurobi11.0.1_linux64.tar.gz
+            tar -xvf ./gurobi11.0.1_linux64.tar.gz
+            mv ./gurobi1101 /opt/gurobi
+            export GUROBI_HOME="/opt/gurobi/linux64"
+            export PATH="${PATH}:${GUROBI_HOME}/bin"
+            export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 
         
 
