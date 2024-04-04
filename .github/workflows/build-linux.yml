@@ -81,8 +81,6 @@ jobs:
             sudo apt install libbz2-dev liblapack-dev libopenblas-dev
             curl -O https://raw.githubusercontent.com/coin-or/coinbrew/master/coinbrew
             chmod u+x coinbrew
-            ./coinbrew fetch Osi@master
-            ./coinbrew fetch CoinUtils@master
             ./coinbrew build CoinUtils --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
@@ -94,10 +92,9 @@ jobs:
             export CPLEX_DIR="$CPLEX_HOME"
             export CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
             export GUROBI_DIR="$GUROBI_HOME"
-            export GUROBI_LIB_DIR="GUROBI_HOME/lib"
-            export GUROBI_INCLUDE_DIR="GUROBI_HOME/include"
+            export GUROBI_LIB_DIR="$GUROBI_HOME/lib"
+            export GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
             ./coinbrew build Osi --latest-release \
-                --skip-dependencies \
                 --prefix=/opt/coin-or \
                 --tests=none \
                 --without-cplex \
