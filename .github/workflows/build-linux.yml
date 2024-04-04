@@ -94,7 +94,7 @@ jobs:
   
             GUROBI_DIR="/opt/gurobi/linux64"
             GUROBI_LIB_DIR="$GUROBI_DIR/lib"
-            GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
+            GUROBI_INCLUDE_DIR="$GUROBI_DIR/include"
             ./coinbrew build Osi --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
