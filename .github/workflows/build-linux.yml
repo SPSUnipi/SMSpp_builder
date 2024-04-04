@@ -3,7 +3,7 @@ name: build-linux
 on: [push, pull_request]
 
 jobs:
-  debug:
+  release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -131,7 +131,7 @@ jobs:
           mkdir build
           cd build
           cmake ..
-          cmake --build . --config Debug
+          cmake --build . --config Release
           cmake --install .
 
 #       - name: Configure CMake
