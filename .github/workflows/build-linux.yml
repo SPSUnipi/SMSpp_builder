@@ -91,9 +91,11 @@ jobs:
             sudo apt install coinor-libclp-dev coinor-libosi-dev
             CPLEX_DIR="$CPLEX_HOME"
             CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
+            echo "GUROBI_HOME: $GUROBI_HOME"
             GUROBI_DIR="$GUROBI_HOME"
-            GUROBI_LIB_DIR="$GUROBI_HOME/lib"
-            GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
+            echo "GUROBI_DIR: $GUROBI_DIR"
+            GUROBI_LIB_DIR="/opt/gurobi/linux64/lib"
+            GUROBI_INCLUDE_DIR="/opt/gurobi/linux64/include"
             ./coinbrew build Osi --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
