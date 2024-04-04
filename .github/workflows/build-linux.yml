@@ -16,11 +16,6 @@ jobs:
         with:
             submodules: 'true'
 
-      - name: Update submodules
-        run: |
-            git submodule sync --recursive
-            git submodule update --init --recursive
-
       - name: Install basic requirements
         run: |
             sudo apt-get update
@@ -125,6 +120,10 @@ jobs:
           cmake --build .
           cmake --install . --prefix /opt/stopt
           cd ../..
+
+      - name: Clone SMSpp
+        run: |
+          git clone -b develop --recurse-submodules https://gitlab.com/smspp/smspp-project.git
       
       - name: Compile SMSpp
         run: |
