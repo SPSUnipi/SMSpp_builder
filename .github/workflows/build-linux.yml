@@ -94,8 +94,8 @@ jobs:
             export CPLEX_DIR="$CPLEX_HOME"
             export CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
             export GUROBI_DIR="$GUROBI_HOME"
-            export GUROBI_LIB_DIR=`ls -bd1 $GUROBI_DIR/*/lib | tail -n1`
-            export GUROBI_INCLUDE_DIR=`ls -bd1 $GUROBI_DIR/*/include | tail -n1`
+            export GUROBI_LIB_DIR="GUROBI_HOME/lib"
+            export GUROBI_INCLUDE_DIR="GUROBI_HOME/include"
             ./coinbrew build Osi --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
