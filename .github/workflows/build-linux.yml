@@ -52,8 +52,8 @@ jobs:
         run: |
             sudo apt install gfortran libtbb2-dev
             curl -O https://www.scipopt.org/download/release/SCIPOptSuite-9.0.0-Linux-ubuntu22.sh
-            chmod u+x SCIPOptSuite-9.0.0-ubuntu22.sh
-            ./SCIPOptSuite-9.0.0-ubuntu22.sh --prefix=/opt/scip --exclude-subdir --skip-license
+            chmod u+x SCIPOptSuite-9.0.0-Linux-ubuntu22.sh
+            ./SCIPOptSuite-9.0.0-Linux-ubuntu22.sh --prefix=/opt/scip --exclude-subdir --skip-license
 
       - name: Install HiGHS
         run: |
@@ -114,6 +114,14 @@ jobs:
       - name: Install StOpt
         run: |
           sudo apt install libstopt5 libstopt-dev
+      
+      - name: Compile SMSpp
+        run: |
+          cd smspp-project
+          mkdir build
+          cmake ..
+          cmake --build . --config Release
+          cmake --install .
 
 #       - name: Configure CMake
 #         shell: bash
