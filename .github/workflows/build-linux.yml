@@ -89,12 +89,13 @@ jobs:
       - name: Install COIN-OR OSI/CLP
         run: |
             sudo apt install coinor-libclp-dev coinor-libosi-dev
-            export CPLEX_DIR="$CPLEX_HOME"
-            export CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
-            export GUROBI_DIR="$GUROBI_HOME"
-            export GUROBI_LIB_DIR="$GUROBI_HOME/lib"
-            export GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
+            CPLEX_DIR="$CPLEX_HOME"
+            CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
+            GUROBI_DIR="$GUROBI_HOME"
+            GUROBI_LIB_DIR="$GUROBI_HOME/lib"
+            GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
             ./coinbrew build Osi --latest-release \
+                --skip-dependencies \
                 --prefix=/opt/coin-or \
                 --tests=none \
                 --without-cplex \
