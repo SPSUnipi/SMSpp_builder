@@ -8,7 +8,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-
+    env:
+      CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio201/cplex"
+      GUROBI_HOME: "/opt/gurobi/linux64"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,11 +28,11 @@ jobs:
       
       - name: Install Boost
         run: |
+            sudo apt install libboost-all-dev  
             sudo apt install libboost-dev
-            sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev libboost-test-dev
+            sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev
             dpkg -l | grep boost
   
-#sudo apt install libboost-all-dev    
       - name: Install NetCDF-C++
         run: |
             sudo apt install libnetcdf-c++4-dev
@@ -41,7 +43,6 @@ jobs:
       
       - name: Install CPLEX (skipped)
         run: |
-            export CPLEX_HOME="/opt/ibm/ILOG/CPLEX_Studio201/cplex"
             echo "CPLEX_HOME: $CPLEX_HOME"
       # MISSING CPLEX INSTALLATION
 
@@ -50,7 +51,6 @@ jobs:
             wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
             tar -xvf ./gurobi10.0.2_linux64.tar.gz
             mv ./gurobi1002 /opt/gurobi
-            export GUROBI_HOME="/opt/gurobi/linux64"
             export PATH="${PATH}:${GUROBI_HOME}/bin"
             export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
             echo "GUROBI_HOME: $GUROBI_HOME"
@@ -91,12 +91,10 @@ jobs:
       - name: Install COIN-OR OSI/CLP
         run: |
             sudo apt install coinor-libclp-dev coinor-libosi-dev
-            CPLEX_DIR="$CPLEX_HOME"
-            CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
-  
-            GUROBI_DIR="/opt/gurobi/linux64"
-            GUROBI_LIB_DIR="$GUROBI_DIR/lib"
-            GUROBI_INCLUDE_DIR="$GUROBI_DIR/include"
+            CPLEX_LIB_DIR=`ls -bd1 $CPLEX_HOME/cplex/lib/*/static_pic | tail -n1`
+            CPLEX_INCLUDE_DIR="$CPLEX_HOME/cplex/include/ilcplex"
+            GUROBI_LIB_DIR="$GUROBI_HOME/lib"
+            GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
             ./coinbrew build Osi --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
@@ -113,7 +111,7 @@ jobs:
 
           # --with-cplex \
           # --with-cplex-lib="-L$CPLEX_LIB_DIR -lcplex -lpthread -lm -ldl" \
-          # --with-cplex-incdir="$CPLEX_DIR/cplex/include/ilcplex" \
+          # --with-cplex-incdir="$CPLEX_INCLUDE_DIR" \
       
       - name: Install StOpt
         run: |
