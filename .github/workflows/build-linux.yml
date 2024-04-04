@@ -37,9 +37,10 @@ jobs:
         run: |
             sudo apt install libeigen3-dev
       
-      - name: Install CPLEX
+      - name: Install CPLEX (skipped)
         run: |
             export CPLEX_HOME="/opt/ibm/ILOG/CPLEX_Studio201/cplex"
+            echo "CPLEX_HOME: $CPLEX_HOME"
       # MISSING CPLEX INSTALLATION
 
       - name: Install gurobi
@@ -50,6 +51,8 @@ jobs:
             export GUROBI_HOME="/opt/gurobi/linux64"
             export PATH="${PATH}:${GUROBI_HOME}/bin"
             export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+            echo "GUROBI_HOME: $GUROBI_HOME"
+            echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
       
       - name: Install SCIP
         run: |
@@ -88,9 +91,9 @@ jobs:
       - name: Install COIN-OR OSI/CLP
         run: |
             sudo apt install coinor-libclp-dev coinor-libosi-dev
-            export CPLEX_DIR=$CPLEX_HOME
+            export CPLEX_DIR="$CPLEX_HOME"
             export CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
-            export GUROBI_DIR=$GUROBI_HOME
+            export GUROBI_DIR="$GUROBI_HOME"
             export GUROBI_LIB_DIR=`ls -bd1 $GUROBI_DIR/*/lib | tail -n1`
             export GUROBI_INCLUDE_DIR=`ls -bd1 $GUROBI_DIR/*/include | tail -n1`
             ./coinbrew build Osi --latest-release \
