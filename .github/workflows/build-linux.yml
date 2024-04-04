@@ -91,11 +91,10 @@ jobs:
             sudo apt install coinor-libclp-dev coinor-libosi-dev
             CPLEX_DIR="$CPLEX_HOME"
             CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
-            echo "GUROBI_HOME: $GUROBI_HOME"
-            GUROBI_DIR="$GUROBI_HOME"
-            echo "GUROBI_DIR: $GUROBI_DIR"
-            GUROBI_LIB_DIR="/opt/gurobi/linux64/lib"
-            GUROBI_INCLUDE_DIR="/opt/gurobi/linux64/include"
+  
+            GUROBI_DIR="/opt/gurobi/linux64"
+            GUROBI_LIB_DIR="$GUROBI_DIR/lib"
+            GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
             ./coinbrew build Osi --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
@@ -116,7 +115,15 @@ jobs:
       
       - name: Install StOpt
         run: |
-          sudo apt install libstopt5 libstopt-dev
+          sudo apt install zlib1g-dev libbz2-dev
+          git clone https://gitlab.com/stochastic-control/StOpt
+          cd StOpt
+          mkdir build
+          cd build
+          cmake -DBUILD_PYTHON=OFF -DBUILD_TEST=OFF ..
+          cmake --build .
+          cmake --install . --prefix /opt/stopt
+          cd ../..
       
       - name: Compile SMSpp
         run: |
