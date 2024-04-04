@@ -26,8 +26,10 @@ jobs:
       
       - name: Install Boost
         run: |
+            sudo apt install libboost-all-dev
             sudo apt install libboost-dev
             sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev
+            dpkg -l | grep boost
       
       - name: Install NetCDF-C++
         run: |
