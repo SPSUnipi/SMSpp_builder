@@ -39,7 +39,7 @@ jobs:
       
       - name: Install CPLEX
         run: |
-            CPLEX_HOME = "/opt/ibm/ILOG/CPLEX_Studio201/cplex"
+            export CPLEX_HOME="/opt/ibm/ILOG/CPLEX_Studio201/cplex"
       # MISSING CPLEX INSTALLATION
 
       - name: Install gurobi
