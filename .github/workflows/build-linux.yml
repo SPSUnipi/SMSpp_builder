@@ -78,6 +78,8 @@ jobs:
             sudo apt install libbz2-dev liblapack-dev libopenblas-dev
             curl -O https://raw.githubusercontent.com/coin-or/coinbrew/master/coinbrew
             chmod u+x coinbrew
+            ./coinbrew fetch Osi@master
+            ./coinbrew fetch CoinUtils@master
             ./coinbrew build CoinUtils --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
