@@ -3,7 +3,7 @@ name: build-linux
 on: [push, pull_request]
 
 jobs:
-  debug:
+  release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -37,7 +37,10 @@ jobs:
         run: |
             sudo apt install libeigen3-dev
       
-      # MISSING CPLEX
+      - name: Install CPLEX
+        run: |
+            CPLEX_HOME = "/opt/ibm/ILOG/CPLEX_Studio201/cplex"
+      # MISSING CPLEX INSTALLATION
 
       - name: Install gurobi
         run: |
@@ -83,7 +86,7 @@ jobs:
       - name: Install COIN-OR OSI/CLP
         run: |
             sudo apt install coinor-libclp-dev coinor-libosi-dev
-            CPLEX_DIR=<cplex-studio-dir>
+            CPLEX_DIR=$CPLEX_HOME
             CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
             GUROBI_DIR=$GUROBI_HOME
             GUROBI_LIB_DIR=`ls -bd1 $GUROBI_DIR/*/lib | tail -n1`
