@@ -1,3 +1,4 @@
 [submodule "smspp-project"]
 	path = smspp-project
 	url = https://gitlab.com/smspp/smspp-project
+	branch = develop

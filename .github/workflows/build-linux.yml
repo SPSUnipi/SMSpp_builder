@@ -19,19 +19,43 @@ jobs:
             git submodule sync --recursive
             git submodule update --init --recursive
 
-      - name: Install dependencies
+      - name: Install basic requirements
         run: |
             sudo apt-get update
             sudo apt install build-essential cmake git
+      
+      - name: Install Boost
+        run: |
             sudo apt install libboost-dev
             sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev
+      
+      - name: Install NetCDF-C++
+        run: |
             sudo apt install libnetcdf-c++4-dev
+      
+      - name: Install Eigen
+        run: |
             sudo apt install libeigen3-dev
-            sudo apt install gfortran libtbb2-dev
-            sudo apt install coinor-libcoinutils-dev
-            sudo apt install libbz2-dev liblapack-dev libopenblas-dev
+      
+      # MISSING CPLEX
 
-      - name: install highs
+      - name: Install gurobi
+        run: |
+            wget https://packages.gurobi.com/11.0/gurobi11.0.1_linux64.tar.gz
+            tar -xvf ./gurobi11.0.1_linux64.tar.gz
+            mv ./gurobi1101 /opt/gurobi
+            export GUROBI_HOME="/opt/gurobi/linux64"
+            export PATH="${PATH}:${GUROBI_HOME}/bin"
+            export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+      
+      - name: Install SCIP
+        run: |
+            sudo apt install gfortran libtbb2-dev
+            curl -O https://www.scipopt.org/download/release/SCIPOptSuite-9.0.0-Linux-ubuntu22.sh
+            chmod u+x SCIPOptSuite-9.0.0-ubuntu22.sh
+            ./SCIPOptSuite-9.0.0-ubuntu22.sh --prefix=/opt/scip --exclude-subdir --skip-license
+
+      - name: Install HiGHS
         run: |
             git clone https://github.com/ERGO-Code/HiGHS.git
             cd HiGHS
@@ -41,26 +65,55 @@ jobs:
             cmake --build .
             cmake --install .
             cd ..
-
-      - name: install coinbrew
+      
+      - name: Install COIN-OR CoinUtils
         run: |
+            sudo apt install coinor-libcoinutils-dev
+      
+      - name: Install coinbrew
+        run: |
+            sudo apt install libbz2-dev liblapack-dev libopenblas-dev
             curl -O https://raw.githubusercontent.com/coin-or/coinbrew/master/coinbrew
             chmod u+x coinbrew
             ./coinbrew build CoinUtils --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
                 --tests=none
-        
-      - name: install gurobi
+      
+      - name: Install COIN-OR OSI/CLP
         run: |
-            wget https://packages.gurobi.com/11.0/gurobi11.0.1_linux64.tar.gz
-            tar -xvf ./gurobi11.0.1_linux64.tar.gz
-            mv ./gurobi1101 /opt/gurobi
-            export GUROBI_HOME="/opt/gurobi/linux64"
-            export PATH="${PATH}:${GUROBI_HOME}/bin"
-            export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+            sudo apt install coinor-libclp-dev coinor-libosi-dev
 
-        
+            CPLEX_DIR=<cplex-studio-dir>
+            CPLEX_LIB_DIR=`ls -bd1 $CPLEX_DIR/cplex/lib/*/static_pic | tail -n1`
+
+            #Set here your main GUROBI directory
+            GUROBI_DIR=$GUROBI_HOME
+            GUROBI_LIB_DIR=`ls -bd1 $GUROBI_DIR/*/lib | tail -n1`
+            GUROBI_INCLUDE_DIR=`ls -bd1 $GUROBI_DIR/*/include | tail -n1`
+
+            ./coinbrew build Osi --latest-release \
+                --skip-dependencies \
+                --prefix=/opt/coin-or \
+                --tests=none \
+                --without-cplex \
+                --with-gurobi \
+                --with-gurobi-lib="-L$GUROBI_LIB_DIR -lgurobi100" \
+                --with-gurobi-incdir="$GUROBI_INCLUDE_DIR"
+            
+            ./coinbrew build Clp --latest-release \
+                --skip-dependencies \
+                --prefix=/opt/coin-or \
+                --tests=none
+            
+
+          # --with-cplex \
+          # --with-cplex-lib="-L$CPLEX_LIB_DIR -lcplex -lpthread -lm -ldl" \
+          # --with-cplex-incdir="$CPLEX_DIR/cplex/include/ilcplex" \
+      
+      - name: Install StOpt
+        run: |
+          sudo apt install libstopt5 libstopt-dev
 
 #       - name: Configure CMake
 #         shell: bash
