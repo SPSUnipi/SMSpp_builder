@@ -9,8 +9,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     env:
-      CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio201/cplex"
       GUROBI_HOME: "/opt/gurobi/linux64"
+      # CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio201/cplex"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,7 +43,8 @@ jobs:
       
       - name: Install CPLEX (skipped)
         run: |
-            echo "CPLEX_HOME: $CPLEX_HOME"
+            echo "SKIPPED"
+      #      echo "CPLEX_HOME: $CPLEX_HOME"
       # MISSING CPLEX INSTALLATION
 
       - name: Install gurobi
@@ -91,8 +92,6 @@ jobs:
       - name: Install COIN-OR OSI/CLP
         run: |
             sudo apt install coinor-libclp-dev coinor-libosi-dev
-            CPLEX_LIB_DIR=`ls -bd1 $CPLEX_HOME/cplex/lib/*/static_pic | tail -n1`
-            CPLEX_INCLUDE_DIR="$CPLEX_HOME/cplex/include/ilcplex"
             GUROBI_LIB_DIR="$GUROBI_HOME/lib"
             GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
             ./coinbrew build Osi --latest-release \
@@ -109,6 +108,8 @@ jobs:
                 --tests=none
             
 
+          # CPLEX_LIB_DIR=`ls -bd1 $CPLEX_HOME/cplex/lib/*/static_pic | tail -n1`
+          # CPLEX_INCLUDE_DIR="$CPLEX_HOME/cplex/include/ilcplex"
           # --with-cplex \
           # --with-cplex-lib="-L$CPLEX_LIB_DIR -lcplex -lpthread -lm -ldl" \
           # --with-cplex-incdir="$CPLEX_INCLUDE_DIR" \
