@@ -44,9 +44,9 @@ jobs:
 
       - name: Install gurobi
         run: |
-            wget https://packages.gurobi.com/11.0/gurobi11.0.1_linux64.tar.gz
-            tar -xvf ./gurobi11.0.1_linux64.tar.gz
-            mv ./gurobi1101 /opt/gurobi
+            wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
+            tar -xvf ./gurobi10.0.2_linux64.tar.gz
+            mv ./gurobi1002 /opt/gurobi
             export GUROBI_HOME="/opt/gurobi/linux64"
             export PATH="${PATH}:${GUROBI_HOME}/bin"
             export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
