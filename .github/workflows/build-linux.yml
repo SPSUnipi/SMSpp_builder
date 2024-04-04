@@ -26,11 +26,11 @@ jobs:
       
       - name: Install Boost
         run: |
-            sudo apt install libboost-all-dev
             sudo apt install libboost-dev
-            sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev
+            sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev libboost-test-dev
             dpkg -l | grep boost
-      
+  
+#sudo apt install libboost-all-dev    
       - name: Install NetCDF-C++
         run: |
             sudo apt install libnetcdf-c++4-dev
@@ -131,6 +131,7 @@ jobs:
         run: |
           cd smspp-project
           mkdir build
+          cd build
           cmake ..
           cmake --build . --config Release
           cmake --install .
