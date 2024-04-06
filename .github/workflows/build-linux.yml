@@ -10,7 +10,7 @@ jobs:
         os: [ubuntu-latest]
     env:
       GUROBI_HOME: "/opt/gurobi/linux64"
-      # CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio201/cplex"
+      # CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio2211"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,6 +38,10 @@ jobs:
       - name: Install CPLEX (skipped)
         run: |
             echo "SKIPPED"
+        # chmod u+x cplex_studio2211.linux_x86_64.bin
+        # sudo ./cplex_studio2211.linux_x86_64.bin
+        # cp -r cplex /opt/cplex
+
       #      echo "CPLEX_HOME: $CPLEX_HOME"
       # MISSING CPLEX INSTALLATION
 
