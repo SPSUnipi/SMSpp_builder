@@ -32,3 +32,9 @@
 *.app
 
 cplex*
+gurobi*
+smspp*
+coinbrew
+CoinUtils*
+build*
+SCIPOptSuite*
