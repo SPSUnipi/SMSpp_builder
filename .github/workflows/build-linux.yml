@@ -54,7 +54,7 @@ jobs:
             export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
             echo "GUROBI_HOME: $GUROBI_HOME"
             echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
-            sudo sh -c "echo '/opt/gurobi<ver>/linux64/lib' > /etc/ld.so.conf.d/gurobi.conf"
+            sudo sh -c "echo '${GUROBI_HOME}/lib' > /etc/ld.so.conf.d/gurobi.conf"
             sudo ldconfig
       
       - name: Install SCIP
@@ -75,7 +75,7 @@ jobs:
             cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/opt/HiGHS ..
             cmake --build .
             sudo cmake --install .
-            sudo sh -c "echo '/opt/HiGHS/lib' > /etc/ld.so.conf.d/scip.conf"
+            sudo sh -c "echo '/opt/HiGHS/lib' > /etc/ld.so.conf.d/highs.conf"
             sudo ldconfig
             cd ../..
       
