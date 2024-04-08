@@ -54,6 +54,7 @@ jobs:
             export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
             echo "GUROBI_HOME: $GUROBI_HOME"
             echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+            echo "$GUROBI_HOME/bin" >> $GITHUB_PATH
             sudo sh -c "echo '${GUROBI_HOME}/lib' > /etc/ld.so.conf.d/gurobi.conf"
             sudo ldconfig
       
