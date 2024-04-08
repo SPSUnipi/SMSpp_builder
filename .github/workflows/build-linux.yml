@@ -54,13 +54,17 @@ jobs:
             export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
             echo "GUROBI_HOME: $GUROBI_HOME"
             echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+            sudo sh -c "echo '/opt/gurobi<ver>/linux64/lib' > /etc/ld.so.conf.d/gurobi.conf"
+            sudo ldconfig
       
       - name: Install SCIP
         run: |
-            sudo apt install gfortran libtbb2-dev
+            sudo apt install gfortran libtbb-dev
             curl -O https://www.scipopt.org/download/release/SCIPOptSuite-9.0.0-Linux-ubuntu22.sh
             chmod u+x SCIPOptSuite-9.0.0-Linux-ubuntu22.sh
             ./SCIPOptSuite-9.0.0-Linux-ubuntu22.sh --prefix=/opt/scip --exclude-subdir --skip-license
+            sudo sh -c "echo '/opt/scip/lib' > /etc/ld.so.conf.d/scip.conf"
+            sudo ldconfig
 
       - name: Install HiGHS
         run: |
@@ -71,6 +75,8 @@ jobs:
             cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/opt/HiGHS ..
             cmake --build .
             sudo cmake --install .
+            sudo sh -c "echo '/opt/HiGHS/lib' > /etc/ld.so.conf.d/scip.conf"
+            sudo ldconfig
             cd ../..
       
       - name: Install COIN-OR CoinUtils
