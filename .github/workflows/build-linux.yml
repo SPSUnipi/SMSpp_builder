@@ -37,6 +37,7 @@ jobs:
     - name: Conda list
       run: |
         conda init
+        source ~/.bashrc
         conda activate SMSpp_builder
         conda list
 
@@ -62,6 +63,7 @@ jobs:
     - name: Install CPLEX
       run: |
           conda init
+          source ~/.bashrc
           conda activate SMSpp_builder
           python pypsa_tester/gdrive_downloader.py ${{ secrets.CPLEX_INSTALLER }} ./cplex_studio2211.linux_x86_64.bin
           echo "CPLEX installer downloaded"
