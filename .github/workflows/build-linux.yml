@@ -22,10 +22,6 @@ jobs:
       STOPT_HOME: "/opt/stopt"
       SCIP_HOME: "/opt/scip"
     
-    defaults:
-      run:
-        shell: bash -l {0}
-    
     steps:
     - uses: actions/checkout@v4
       with:
@@ -37,10 +33,12 @@ jobs:
         activate-environment: SMSpp_builder
         environment-file: pypsa_tester/environment.yaml
         auto-activate-base: false
-        condarc-file: etc/SMSpp_builder_condarc.yml
     
     - name: Conda list
-      run: conda list
+      run: |
+        conda init
+        conda activate SMSpp_builder
+        conda list
 
     - name: Install basic requirements
       run: |
@@ -63,6 +61,7 @@ jobs:
     
     - name: Install CPLEX
       run: |
+          conda init
           conda activate SMSpp_builder
           python pypsa_tester/gdrive_downloader.py ${{ secrets.CPLEX_INSTALLER }} ./cplex_studio2211.linux_x86_64.bin
           echo "CPLEX installer downloaded"
