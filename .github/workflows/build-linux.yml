@@ -169,6 +169,7 @@ jobs:
     
     - name: Compile SMSpp
       run: |
+        conda deactivate
         cd smspp-project
         mkdir build
         cd build
