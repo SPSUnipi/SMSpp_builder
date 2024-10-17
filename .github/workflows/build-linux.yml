@@ -40,6 +40,7 @@ jobs:
         source ~/.bashrc
         conda activate SMSpp_builder
         conda list
+        conda init --reverse
 
     - name: Install basic requirements
       run: |
@@ -66,6 +67,7 @@ jobs:
           source ~/.bashrc
           conda activate SMSpp_builder
           python pypsa_tester/gdrive_downloader.py ${{ secrets.CPLEX_INSTALLER }} ./cplex_studio2211.linux_x86_64.bin
+          conda init --reverse
           echo "CPLEX installer downloaded"
           chmod u+x cplex_studio2211.linux_x86_64.bin
           sudo ./cplex_studio2211.linux_x86_64.bin -f ./installer.properties &
