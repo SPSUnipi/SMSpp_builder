@@ -19,7 +19,7 @@ jobs:
     env:
       GUROBI_HOME: "/opt/gurobi/linux64"
       CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio2211"
-      STOPT_HOME: "/opt/stopt"
+      STOPT_HOME: "/opt/StOpt"
       SCIP_HOME: "/opt/scip"
     
     steps:
@@ -170,9 +170,9 @@ jobs:
         cd build
         cmake -DBUILD_PYTHON=OFF -DBUILD_TEST=OFF ..
         cmake --build .
-        sudo cmake --install . --prefix /opt/stopt
+        sudo cmake --install . --prefix /opt/StOpt
         cd ../..
-        echo "/opt/stopt" >> $GITHUB_PATH
+        echo "/opt/StOpt" >> $GITHUB_PATH
 
     - name: Clone SMSpp
       run: |
