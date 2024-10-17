@@ -10,11 +10,22 @@ jobs:
         os: [ubuntu-latest]
     env:
       GUROBI_HOME: "/opt/gurobi/linux64"
-      # CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio2211"
+      CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio2211"
+      CPLEX_INSTALLER: ${{ secrets.CPLEX_INSTALLER }}
     steps:
       - uses: actions/checkout@v4
         with:
             submodules: 'true'
+      
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: SMSpp_builder
+          environment-file: pypsa_tester/environment.yaml
+      
+      - name: Download CPLEX
+        run: |
+            python pypsa_tester/gdrive_downloader.py $CPLEX_INSTALLER ./cplex_studio2211.linux_x86_64.bin
 
       - name: Install basic requirements
         run: |
