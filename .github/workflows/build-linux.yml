@@ -23,9 +23,8 @@ jobs:
           activate-environment: SMSpp_builder
           environment-file: pypsa_tester/environment.yaml
       
-      - name: Download CPLEX
-        run: |
-            python pypsa_tester/gdrive_downloader.py $CPLEX_INSTALLER ./cplex_studio2211.linux_x86_64.bin
+      - name: Conda list
+        run: conda list
 
       - name: Install basic requirements
         run: |
@@ -48,13 +47,19 @@ jobs:
       
       - name: Install CPLEX (skipped)
         run: |
-            echo "SKIPPED"
-        # chmod u+x cplex_studio2211.linux_x86_64.bin
-        # sudo ./cplex_studio2211.linux_x86_64.bin
-        # cp -r cplex /opt/cplex
-
-      #      echo "CPLEX_HOME: $CPLEX_HOME"
-      # MISSING CPLEX INSTALLATION
+            conda activate SMSpp_builder
+            python pypsa_tester/gdrive_downloader.py $CPLEX_INSTALLER ./cplex_studio2211.linux_x86_64.bin
+            echo "CPLEX installer downloaded"
+            chmod u+x cplex_studio2211.linux_x86_64.bin
+            sudo ./cplex_studio2211.linux_x86_64.bin
+            cp -r cplex /opt/cplex
+            export PATH="${PATH}:${CPLEX_HOME}/bin"
+            export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CPLEX_HOME}/lib"
+            echo "CPLEX_HOME: $CPLEX_HOME"
+            echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+            echo "$CPLEX_HOME/bin" >> $GITHUB_PATH
+            sudo sh -c "echo '${CPLEX_HOME}/lib' > /etc/ld.so.conf.d/cplex.conf"
+            sudo ldconfig
 
       - name: Install gurobi
         run: |
@@ -110,6 +115,8 @@ jobs:
             sudo apt install coinor-libclp-dev coinor-libosi-dev
             GUROBI_LIB_DIR="$GUROBI_HOME/lib"
             GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
+            CPLEX_LIB_DIR=`ls -bd1 $CPLEX_HOME/cplex/lib/*/static_pic | tail -n1`
+            CPLEX_INCLUDE_DIR="$CPLEX_HOME/cplex/include/ilcplex"
             sudo ./coinbrew build Osi --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
@@ -117,7 +124,10 @@ jobs:
                 --without-cplex \
                 --with-gurobi \
                 --with-gurobi-lib="-L$GUROBI_LIB_DIR -lgurobi100" \
-                --with-gurobi-incdir="$GUROBI_INCLUDE_DIR"
+                --with-gurobi-incdir="$GUROBI_INCLUDE_DIR" \
+                --with-cplex \
+                --with-cplex-lib="-L$CPLEX_LIB_DIR -lcplex -lpthread -lm -ldl" \
+                --with-cplex-incdir="$CPLEX_INCLUDE_DIR"
             sudo ./coinbrew build Clp --latest-release \
                 --skip-dependencies \
                 --prefix=/opt/coin-or \
