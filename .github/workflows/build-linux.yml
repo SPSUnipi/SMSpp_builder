@@ -62,8 +62,8 @@ jobs:
           python pypsa_tester/gdrive_downloader.py ${{ secrets.CPLEX_INSTALLER }} ./cplex_studio2211.linux_x86_64.bin
           echo "CPLEX installer downloaded"
           chmod u+x cplex_studio2211.linux_x86_64.bin
-          sudo ./cplex_studio2211.linux_x86_64.bin
-          cp -r cplex /opt/cplex
+          sudo ./cplex_studio2211.linux_x86_64.bin -f ./installer.properties &
+          wait $!
           export PATH="${PATH}:${CPLEX_HOME}/bin"
           export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CPLEX_HOME}/lib"
           echo "CPLEX_HOME: $CPLEX_HOME"
@@ -176,6 +176,17 @@ jobs:
         cmake --build . --config Release
         sudo cmake --install .
 
+    - name: Test SMSpp - UCBlockSolver
+      run: |
+        cd ./smspp-project/tools/ucblock_solver/examples
+        chmod u+x ../../../build/tools/ucblock_solver/ucblock_solver
+        ../../../build/tools/ucblock_solver/ucblock_solver thermalunit_block.nc4 -S uc_solverconfig.txt
+
+    - name: Test SMSpp - InvestmentBlockTest
+      run: |
+        cd ./smspp-project/InvestmentBlock/test/instance-1/
+        chmod u+x ../../../build/InvestmentBlock/test/InvestmentBlock_test
+        ../../../build/InvestmentBlock/test/InvestmentBlock_test -c ../config/ -S ../config/BSPar.txt InvestmentBlock.nc4
 
 #       - name: Configure CMake
 #         shell: bash
