@@ -19,7 +19,6 @@ jobs:
     env:
       GUROBI_HOME: "/opt/gurobi/linux64"
       CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio2211"
-      CPLEX_INSTALLER: ${{ secrets.CPLEX_INSTALLER }}
     
     defaults:
       run:
@@ -58,9 +57,9 @@ jobs:
       run: |
           sudo apt install libeigen3-dev
     
-    - name: Install CPLEX (skipped)
+    - name: Install CPLEX
       run: |
-          python pypsa_tester/gdrive_downloader.py $CPLEX_INSTALLER ./cplex_studio2211.linux_x86_64.bin
+          python pypsa_tester/gdrive_downloader.py ${{ secrets.CPLEX_INSTALLER }} ./cplex_studio2211.linux_x86_64.bin
           echo "CPLEX installer downloaded"
           chmod u+x cplex_studio2211.linux_x86_64.bin
           sudo ./cplex_studio2211.linux_x86_64.bin
@@ -176,6 +175,7 @@ jobs:
         cmake ..
         cmake --build . --config Release
         sudo cmake --install .
+
 
 #       - name: Configure CMake
 #         shell: bash
