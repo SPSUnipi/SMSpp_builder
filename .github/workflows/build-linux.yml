@@ -198,9 +198,8 @@ jobs:
     - name: Test SMSpp - InvestmentBlockTest
       run: |
         cd ./smspp-project/InvestmentBlock/test/instance-1/
-        InvestmentBlock_test -c ../config/ -S ../config/BSPar.txt InvestmentBlock.nc4
-      # chmod u+x ../../../build/InvestmentBlock/test/InvestmentBlock_test
-      # ../../../build/InvestmentBlock/test/InvestmentBlock_test -c ../config/ -S ../config/BSPar.txt InvestmentBlock.nc4
+        chmod u+x ../../../build/InvestmentBlock/test/InvestmentBlock_test
+        ../../../build/InvestmentBlock/test/InvestmentBlock_test -c ../config/ -S ../config/BSPar.txt InvestmentBlock.nc4
 
 #       - name: Configure CMake
 #         shell: bash
