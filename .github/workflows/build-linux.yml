@@ -183,6 +183,7 @@ jobs:
         cmake ..
         cmake --build . --config Release
         sudo cmake --install . --prefix /opt/smspp
+        echo "/opt/smspp/bin" >> $GITHUB_PATH
 
     - name: Test SMSpp - UCBlockSolver
       run: |
