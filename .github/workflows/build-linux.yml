@@ -37,6 +37,7 @@ jobs:
         activate-environment: SMSpp_builder
         environment-file: pypsa_tester/environment.yaml
         auto-activate-base: false
+        condarc-file: etc/SMSpp_builder_condarc.yml
     
     - name: Conda list
       run: conda list
