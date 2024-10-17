@@ -1,6 +1,14 @@
 name: build-linux
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+  schedule:
+  - cron: "0 5 * * TUE"
 
 jobs:
   release:
@@ -12,158 +20,162 @@ jobs:
       GUROBI_HOME: "/opt/gurobi/linux64"
       CPLEX_HOME: "/opt/ibm/ILOG/CPLEX_Studio2211"
       CPLEX_INSTALLER: ${{ secrets.CPLEX_INSTALLER }}
+    
+    defaults:
+      run:
+        shell: bash -l {0}
+    
     steps:
-      - uses: actions/checkout@v4
-        with:
-            submodules: 'true'
-      
-      - name: Setup conda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: SMSpp_builder
-          environment-file: pypsa_tester/environment.yaml
-      
-      - name: Conda list
-        run: conda list
+    - uses: actions/checkout@v4
+      with:
+          submodules: 'true'
+    
+    - name: Setup conda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        activate-environment: SMSpp_builder
+        environment-file: pypsa_tester/environment.yaml
+    
+    - name: Conda list
+      run: conda list
 
-      - name: Install basic requirements
-        run: |
-            sudo apt-get update
-            sudo apt install build-essential cmake git
-      
-      - name: Install Boost
-        run: |
-            sudo apt install libboost-dev
-            sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev libboost-random-dev
-            dpkg -l | grep boost
-  
-      - name: Install NetCDF-C++
-        run: |
-            sudo apt install libnetcdf-c++4-dev
-      
-      - name: Install Eigen
-        run: |
-            sudo apt install libeigen3-dev
-      
-      - name: Install CPLEX (skipped)
-        run: |
-            conda activate SMSpp_builder
-            python pypsa_tester/gdrive_downloader.py $CPLEX_INSTALLER ./cplex_studio2211.linux_x86_64.bin
-            echo "CPLEX installer downloaded"
-            chmod u+x cplex_studio2211.linux_x86_64.bin
-            sudo ./cplex_studio2211.linux_x86_64.bin
-            cp -r cplex /opt/cplex
-            export PATH="${PATH}:${CPLEX_HOME}/bin"
-            export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CPLEX_HOME}/lib"
-            echo "CPLEX_HOME: $CPLEX_HOME"
-            echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
-            echo "$CPLEX_HOME/bin" >> $GITHUB_PATH
-            sudo sh -c "echo '${CPLEX_HOME}/lib' > /etc/ld.so.conf.d/cplex.conf"
-            sudo ldconfig
+    - name: Install basic requirements
+      run: |
+          sudo apt-get update
+          sudo apt install build-essential cmake git
+    
+    - name: Install Boost
+      run: |
+          sudo apt install libboost-dev
+          sudo apt install libboost-system-dev libboost-timer-dev libboost-mpi-dev libboost-random-dev
+          dpkg -l | grep boost
 
-      - name: Install gurobi
-        run: |
-            wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
-            tar -xvf ./gurobi10.0.2_linux64.tar.gz
-            mv ./gurobi1002 /opt/gurobi
-            export PATH="${PATH}:${GUROBI_HOME}/bin"
-            export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
-            echo "GUROBI_HOME: $GUROBI_HOME"
-            echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
-            echo "$GUROBI_HOME/bin" >> $GITHUB_PATH
-            sudo sh -c "echo '${GUROBI_HOME}/lib' > /etc/ld.so.conf.d/gurobi.conf"
-            sudo ldconfig
-      
-      - name: Install SCIP
-        run: |
-            sudo apt install gfortran libtbb-dev
-            curl -O https://www.scipopt.org/download/release/SCIPOptSuite-9.0.0-Linux-ubuntu22.sh
-            chmod u+x SCIPOptSuite-9.0.0-Linux-ubuntu22.sh
-            ./SCIPOptSuite-9.0.0-Linux-ubuntu22.sh --prefix=/opt/scip --exclude-subdir --skip-license
-            sudo sh -c "echo '/opt/scip/lib' > /etc/ld.so.conf.d/scip.conf"
-            sudo ldconfig
+    - name: Install NetCDF-C++
+      run: |
+          sudo apt install libnetcdf-c++4-dev
+    
+    - name: Install Eigen
+      run: |
+          sudo apt install libeigen3-dev
+    
+    - name: Install CPLEX (skipped)
+      run: |
+          python pypsa_tester/gdrive_downloader.py $CPLEX_INSTALLER ./cplex_studio2211.linux_x86_64.bin
+          echo "CPLEX installer downloaded"
+          chmod u+x cplex_studio2211.linux_x86_64.bin
+          sudo ./cplex_studio2211.linux_x86_64.bin
+          cp -r cplex /opt/cplex
+          export PATH="${PATH}:${CPLEX_HOME}/bin"
+          export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CPLEX_HOME}/lib"
+          echo "CPLEX_HOME: $CPLEX_HOME"
+          echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+          echo "$CPLEX_HOME/bin" >> $GITHUB_PATH
+          sudo sh -c "echo '${CPLEX_HOME}/lib' > /etc/ld.so.conf.d/cplex.conf"
+          sudo ldconfig
 
-      - name: Install HiGHS
-        run: |
-            git clone https://github.com/ERGO-Code/HiGHS.git
-            cd HiGHS
-            mkdir build
-            cd build
-            cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/opt/HiGHS ..
-            cmake --build .
-            sudo cmake --install .
-            sudo sh -c "echo '/opt/HiGHS/lib' > /etc/ld.so.conf.d/highs.conf"
-            sudo ldconfig
-            cd ../..
-      
-      - name: Install COIN-OR CoinUtils
-        run: |
-            sudo apt install coinor-libcoinutils-dev
-      
-      - name: Install coinbrew
-        run: |
-            sudo apt install libbz2-dev liblapack-dev libopenblas-dev
-            curl -O https://raw.githubusercontent.com/coin-or/coinbrew/master/coinbrew
-            chmod u+x coinbrew
-            sudo ./coinbrew build CoinUtils --latest-release \
-                --skip-dependencies \
-                --prefix=/opt/coin-or \
-                --tests=none
-      
-      - name: Install COIN-OR OSI/CLP
-        run: |
-            sudo apt install coinor-libclp-dev coinor-libosi-dev
-            GUROBI_LIB_DIR="$GUROBI_HOME/lib"
-            GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
-            CPLEX_LIB_DIR=`ls -bd1 $CPLEX_HOME/cplex/lib/*/static_pic | tail -n1`
-            CPLEX_INCLUDE_DIR="$CPLEX_HOME/cplex/include/ilcplex"
-            sudo ./coinbrew build Osi --latest-release \
-                --skip-dependencies \
-                --prefix=/opt/coin-or \
-                --tests=none \
-                --without-cplex \
-                --with-gurobi \
-                --with-gurobi-lib="-L$GUROBI_LIB_DIR -lgurobi100" \
-                --with-gurobi-incdir="$GUROBI_INCLUDE_DIR" \
-                --with-cplex \
-                --with-cplex-lib="-L$CPLEX_LIB_DIR -lcplex -lpthread -lm -ldl" \
-                --with-cplex-incdir="$CPLEX_INCLUDE_DIR"
-            sudo ./coinbrew build Clp --latest-release \
-                --skip-dependencies \
-                --prefix=/opt/coin-or \
-                --tests=none
-            
+    - name: Install gurobi
+      run: |
+          wget https://packages.gurobi.com/10.0/gurobi10.0.2_linux64.tar.gz
+          tar -xvf ./gurobi10.0.2_linux64.tar.gz
+          mv ./gurobi1002 /opt/gurobi
+          export PATH="${PATH}:${GUROBI_HOME}/bin"
+          export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+          echo "GUROBI_HOME: $GUROBI_HOME"
+          echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+          echo "$GUROBI_HOME/bin" >> $GITHUB_PATH
+          sudo sh -c "echo '${GUROBI_HOME}/lib' > /etc/ld.so.conf.d/gurobi.conf"
+          sudo ldconfig
+    
+    - name: Install SCIP
+      run: |
+          sudo apt install gfortran libtbb-dev
+          curl -O https://www.scipopt.org/download/release/SCIPOptSuite-9.0.0-Linux-ubuntu22.sh
+          chmod u+x SCIPOptSuite-9.0.0-Linux-ubuntu22.sh
+          ./SCIPOptSuite-9.0.0-Linux-ubuntu22.sh --prefix=/opt/scip --exclude-subdir --skip-license
+          sudo sh -c "echo '/opt/scip/lib' > /etc/ld.so.conf.d/scip.conf"
+          sudo ldconfig
 
-          # CPLEX_LIB_DIR=`ls -bd1 $CPLEX_HOME/cplex/lib/*/static_pic | tail -n1`
-          # CPLEX_INCLUDE_DIR="$CPLEX_HOME/cplex/include/ilcplex"
-          # --with-cplex \
-          # --with-cplex-lib="-L$CPLEX_LIB_DIR -lcplex -lpthread -lm -ldl" \
-          # --with-cplex-incdir="$CPLEX_INCLUDE_DIR" \
-      
-      - name: Install StOpt
-        run: |
-          sudo apt install zlib1g-dev libbz2-dev
-          git clone https://gitlab.com/stochastic-control/StOpt
-          cd StOpt
+    - name: Install HiGHS
+      run: |
+          git clone https://github.com/ERGO-Code/HiGHS.git
+          cd HiGHS
           mkdir build
           cd build
-          cmake -DBUILD_PYTHON=OFF -DBUILD_TEST=OFF ..
+          cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/opt/HiGHS ..
           cmake --build .
-          sudo cmake --install . --prefix /opt/stopt
-          cd ../..
-
-      - name: Clone SMSpp
-        run: |
-          git clone -b develop --recurse-submodules https://gitlab.com/smspp/smspp-project.git
-      
-      - name: Compile SMSpp
-        run: |
-          cd smspp-project
-          mkdir build
-          cd build
-          cmake ..
-          cmake --build . --config Release
           sudo cmake --install .
+          sudo sh -c "echo '/opt/HiGHS/lib' > /etc/ld.so.conf.d/highs.conf"
+          sudo ldconfig
+          cd ../..
+    
+    - name: Install COIN-OR CoinUtils
+      run: |
+          sudo apt install coinor-libcoinutils-dev
+    
+    - name: Install coinbrew
+      run: |
+          sudo apt install libbz2-dev liblapack-dev libopenblas-dev
+          curl -O https://raw.githubusercontent.com/coin-or/coinbrew/master/coinbrew
+          chmod u+x coinbrew
+          sudo ./coinbrew build CoinUtils --latest-release \
+              --skip-dependencies \
+              --prefix=/opt/coin-or \
+              --tests=none
+    
+    - name: Install COIN-OR OSI/CLP
+      run: |
+          sudo apt install coinor-libclp-dev coinor-libosi-dev
+          GUROBI_LIB_DIR="$GUROBI_HOME/lib"
+          GUROBI_INCLUDE_DIR="$GUROBI_HOME/include"
+          CPLEX_LIB_DIR=`ls -bd1 $CPLEX_HOME/cplex/lib/*/static_pic | tail -n1`
+          CPLEX_INCLUDE_DIR="$CPLEX_HOME/cplex/include/ilcplex"
+          sudo ./coinbrew build Osi --latest-release \
+              --skip-dependencies \
+              --prefix=/opt/coin-or \
+              --tests=none \
+              --without-cplex \
+              --with-gurobi \
+              --with-gurobi-lib="-L$GUROBI_LIB_DIR -lgurobi100" \
+              --with-gurobi-incdir="$GUROBI_INCLUDE_DIR" \
+              --with-cplex \
+              --with-cplex-lib="-L$CPLEX_LIB_DIR -lcplex -lpthread -lm -ldl" \
+              --with-cplex-incdir="$CPLEX_INCLUDE_DIR"
+          sudo ./coinbrew build Clp --latest-release \
+              --skip-dependencies \
+              --prefix=/opt/coin-or \
+              --tests=none
+          
+
+        # CPLEX_LIB_DIR=`ls -bd1 $CPLEX_HOME/cplex/lib/*/static_pic | tail -n1`
+        # CPLEX_INCLUDE_DIR="$CPLEX_HOME/cplex/include/ilcplex"
+        # --with-cplex \
+        # --with-cplex-lib="-L$CPLEX_LIB_DIR -lcplex -lpthread -lm -ldl" \
+        # --with-cplex-incdir="$CPLEX_INCLUDE_DIR" \
+    
+    - name: Install StOpt
+      run: |
+        sudo apt install zlib1g-dev libbz2-dev
+        git clone https://gitlab.com/stochastic-control/StOpt
+        cd StOpt
+        mkdir build
+        cd build
+        cmake -DBUILD_PYTHON=OFF -DBUILD_TEST=OFF ..
+        cmake --build .
+        sudo cmake --install . --prefix /opt/stopt
+        cd ../..
+
+    - name: Clone SMSpp
+      run: |
+        git clone -b develop --recurse-submodules https://gitlab.com/smspp/smspp-project.git
+    
+    - name: Compile SMSpp
+      run: |
+        cd smspp-project
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build . --config Release
+        sudo cmake --install .
 
 #       - name: Configure CMake
 #         shell: bash
