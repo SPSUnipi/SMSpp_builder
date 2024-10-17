@@ -19,5 +19,5 @@ dependencies:
   - ipython
   - ipykernel
  
-- pip:
-  - git+https://github.com/davide-f/google-drive-downloader@disable_print  # google drive with fix for virus scan
+  - pip:
+    - git+https://github.com/davide-f/google-drive-downloader@disable_print  # google drive with fix for virus scan
