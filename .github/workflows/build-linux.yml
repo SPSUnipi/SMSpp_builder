@@ -31,7 +31,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v3
       with:
         activate-environment: SMSpp_builder
-        environment-file: pypsa_tester/environment.yaml
+        environment-file: envs/environment.yaml
         auto-activate-base: false
     
     - name: Conda list
@@ -66,7 +66,7 @@ jobs:
           conda init
           source ~/.bashrc
           conda activate SMSpp_builder
-          python pypsa_tester/gdrive_downloader.py ${{ secrets.CPLEX_INSTALLER }} ./cplex_studio2211.linux_x86_64.bin
+          python ./scripts/gdrive_downloader.py ${{ secrets.CPLEX_INSTALLER }} ./cplex_studio2211.linux_x86_64.bin
           conda init --reverse
           echo "CPLEX installer downloaded"
           chmod u+x cplex_studio2211.linux_x86_64.bin
@@ -200,6 +200,12 @@ jobs:
         cd ./smspp-project/InvestmentBlock/test/instance-1/
         chmod u+x ../../../build/InvestmentBlock/test/InvestmentBlock_test
         ../../../build/InvestmentBlock/test/InvestmentBlock_test -c ../config/ -S ../config/BSPar.txt InvestmentBlock.nc4
+    
+    - name: Test PyPSA - Dispatch microgrid_T_1N
+      run: |
+        conda init
+        source ~/.bashrc
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_T_1N.yaml
 
 #       - name: Configure CMake
 #         shell: bash

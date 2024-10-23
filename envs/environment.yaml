@@ -1,11 +1,15 @@
 name: SMSpp_builder
 channels:
+  - bioconda
+  - gurobi
+  - ibmdecisionoptimization
   - conda-forge
-  - https://conda.anaconda.org/gurobi
-  - defaults
 dependencies:
-  - python
+  - python=3.11
   - pip
+  - snakemake-minimal
+  # - asyncore  #
+
   - numpy
   - pandas
   - matplotlib
@@ -13,7 +17,8 @@ dependencies:
   # for the exercises on pypsa
   - pypsa
   - glpk
-  - gurobi  # not necessary but can ease the usability for some users
+  - gurobi
+  - cplex
 
   # for jupyter
   - jupyter

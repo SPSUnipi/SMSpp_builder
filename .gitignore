@@ -38,3 +38,13 @@ coinbrew
 CoinUtils*
 build*
 SCIPOptSuite*
+
+# Optimization files
+*.lp
+*.nc4
+
+# snakemake folders
+.snakemake*
+resources/*
+logs/*
+results/*
