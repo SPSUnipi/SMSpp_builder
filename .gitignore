@@ -33,7 +33,6 @@
 
 cplex*
 gurobi*
-smspp*
 coinbrew
 CoinUtils*
 build*
