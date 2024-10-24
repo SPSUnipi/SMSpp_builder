@@ -17,9 +17,9 @@ rule microgrid_builder:
         wind_file = 'data/microgrid/ninja_wind_1.7250_33.6208_uncorrected.csv',
         demand_file = 'data/microgrid/demand_data.csv',
     output:
-        "resources/networks/microgrid_" + SNAME + ".nc"
+        "resources/networks/microgrid" + SNAME + ".nc"
     log:
-        "logs/microgrid_builder_" + SNAME + ".log"
+        "logs/microgrid_builder" + SNAME + ".log"
     script:
         "scripts/microgrid_builder.py"
 
@@ -28,11 +28,11 @@ rule microgrid_optimizer:
         solver_name = config['solver_name'],
         solver_options = config.get('solver_options', {}),
     input:
-        "resources/networks/microgrid_" + SNAME + ".nc"
+        "resources/networks/microgrid" + SNAME + ".nc"
     output:
-        "results/networks/microgrid_" + SNAME + "_optimized.nc"
+        "results/networks/microgrid" + SNAME + "_optimized.nc"
     log:
-        "logs/microgrid_optimizer_" + SNAME + ".log"
+        "logs/microgrid_optimizer" + SNAME + ".log"
     script:
         "scripts/microgrid_optimizer.py"
 
@@ -40,23 +40,23 @@ rule smspp_dispatch_builder:
     params:
         renewable_carriers=config['renewable_carriers'],
     input:
-        "results/networks/microgrid_" + SNAME + "_optimized.nc"
+        "results/networks/microgrid" + SNAME + "_optimized.nc"
     output:
-        "resources/smspp/microgrid_" + SNAME + ".nc4"
+        "resources/smspp/microgrid" + SNAME + ".nc4"
     log:
-        "logs/smspp_dispatch_builder_" + SNAME + ".log"
+        "logs/smspp_dispatch_builder" + SNAME + ".log"
     script:
         "scripts/smspp_dispatch_builder.py"
 
 rule smspp_dispatch_optimizer:
     input:
-        smspp_file="resources/smspp/microgrid_" + SNAME + ".nc4",
+        smspp_file="resources/smspp/microgrid" + SNAME + ".nc4",
         configdir=directory("data/SMSpp/UCBlockSolver/"),
         config="data/SMSpp/UCBlockSolver/uc_solverconfig.txt",
     output:
-        "results/smspp/microgrid_" + SNAME + "_optimized.txt"
+        "results/smspp/microgrid" + SNAME + "_optimized.txt"
     log:
-        "logs/smspp_dispatch_optimizer_" + SNAME + ".log"
+        "logs/smspp_dispatch_optimizer" + SNAME + ".log"
     shell:
         "ucblock_solver {input.smspp_file} -c {input.configdir} -S {input.config} >> {output}"
 
@@ -64,12 +64,12 @@ rule verify_dispatch:
     params:
         tolerances=config['tolerances']
     input:
-        pypsa_network="results/networks/microgrid_" + SNAME + "_optimized.nc",
-        smspp_log="results/smspp/microgrid_" + SNAME + "_optimized.txt",
+        pypsa_network="results/networks/microgrid" + SNAME + "_optimized.nc",
+        smspp_log="results/smspp/microgrid" + SNAME + "_optimized.txt",
     output:
-        touch("results/microgrid_" + SNAME + "_complete.txt")
+        touch("results/microgrid" + SNAME + "_complete.txt")
     log:
-        "logs/verify_dispatch_" + SNAME + ".log"
+        "logs/verify_dispatch" + SNAME + ".log"
     script:
         "scripts/verify_dispatch.py"
 
