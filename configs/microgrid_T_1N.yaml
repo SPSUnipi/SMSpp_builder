@@ -25,4 +25,7 @@ model_parameters:  # Parameters for the model (example for microgrid)
 solver_name: gurobi  # PyPSA solver
 # solver_options:
 
-renewable_carriers: [solar, onwind, offwind-ac, offwind-dc, hydro]
+block_config:
+  intermittent_unit_block_carriers: [solar, onwind, offwind-ac, offwind-dc, hydro]
+  battery_unit_block_carriers: [battery]
+  hydro_unit_block_carriers: [hydro]

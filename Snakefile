@@ -38,7 +38,7 @@ rule microgrid_optimizer:
 
 rule smspp_dispatch_builder:
     params:
-        renewable_carriers=config['renewable_carriers'],
+        block_config=config['block_config'],
     input:
         "results/networks/microgrid" + SNAME + "_optimized.nc"
     output:

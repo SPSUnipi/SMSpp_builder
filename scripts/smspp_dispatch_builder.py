@@ -217,35 +217,135 @@ def add_unit_block(
 
     return tub
 
-# def get_renewable_blocks():
-
-
-
-#     renewable_generators = n.generators[n.generators.index.isin(renewable_carriers)]
-
-# id_ren = id_thermal
-
-# if not renewable_generators.empty:
-#     for (idx_name, row) in renewable_generators.iterrows():
-
-#         tiub = master.createGroup(f"UnitBlock_{id_ren}")
-#         tiub.id = str(id_ren)
-#         tiub.type = "IntermittentUnitBlock"
-
-#         n_max_power = n.generators_t.p_max_pu.loc[:, idx_name] * row.p_nom_opt
-        
-
-#         # max power
-#         max_power = tiub.createVariable("MaxPower", NC_DOUBLE, ("TimeHorizon",))
-#         max_power[:] = n_max_power
-
-#         # # max capacity
-#         # max_capacity = tiub.createVariable("MaxCapacity", NC_DOUBLE)
-#         # max_capacity[:] = row[1].p_nom_max 
-
-#         id_ren += 1
+def get_renewable_blocks(n, id_initial, res_carrier):
+    """
+    Get the parameters of the renewable generators
     
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network
+    id_initial : int
+        The initial id for the renewable generators
+    res_carrier : list
+        The list of renewable carriers
+    """
+    renewable_generators = n.generators[n.generators.index.isin(res_carrier)]
 
+    id_renewable = id_initial
+
+    p_max_pu = get_paramer_as_dense(n, "Generator", "p_max_pu", weights=False)
+
+    rub_blocks = []
+    for (idx_name, row) in renewable_generators.iterrows():
+        rub_blocks.append(
+            {
+                "id": id_renewable,
+                "block_type": "IntermittentUnitBlock",
+                "MinPower": 0.0,
+                "MaxPower": (row.p_nom_opt * p_max_pu.loc[:, idx_name]).values,
+            }
+        )
+        id_renewable += 1
+    return rub_blocks
+
+
+def get_battery_blocks(n, id_initial, bub_carriers):
+    """
+    Get the parameters of the battery units
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network
+    id_initial : int
+        The initial id for the battery units
+    bub_carriers : list
+        The list of battery carriers
+
+    Returns
+    -------
+    list
+        The list of dictionaries with the parameters of the battery blocks
+    """
+    # TODO: extend to stores too
+    battery_units = n.storage_units[n.storage_units.index.isin(bub_carriers)]
+
+    id_battery = id_initial
+
+    p_min_pu = get_paramer_as_dense(n, "StorageUnit", "p_min_pu", weights=False)
+    p_max_pu = get_paramer_as_dense(n, "StorageUnit", "p_max_pu", weights=False)
+
+    bub_blocks = []
+    for (idx_name, row) in battery_units.iterrows():
+        bub_blocks.append(
+            {
+                "id": id_battery,
+                "block_type": "BatteryUnitBlock",
+                "MinPower": (row.p_nom_opt * p_min_pu.loc[:, idx_name]).values,
+                "MaxPower": (row.p_nom_opt * p_max_pu.loc[:, idx_name]).values,
+                "MinStorage": 0.0,
+                "MaxStorage": row.p_nom_opt * row.max_hours,
+                "InitialStorage": row.state_of_charge_initial * row.p_nom_opt * row.max_hours,
+                "StoringBatteryRho": row.efficiency_store,
+                "ExtractingBatteryRho": row.efficiency_dispatch,
+            }
+        )
+        id_battery += 1
+    return bub_blocks
+
+
+# def get_hydro_blocks(n, id_initial, hub_carriers):
+#     """
+#     Get the parameters of the hydro units
+
+#     Parameters
+#     ----------
+#     n : pypsa.Network
+#         The PyPSA network
+#     id_initial : int
+#         The initial id for the hydro units
+#     hub_carriers : list
+#         The list of hydro carriers
+
+#     Returns
+#     -------
+#     list
+#         The list of dictionaries with the parameters of the hydro blocks
+#     """
+#     hydro_systems = n.storage_units[n.storage_units.index.isin(hub_carriers)]
+
+#     id_hydro = id_initial
+
+#     N_ARCS = 3
+
+#     p_min_pu = get_paramer_as_dense(n, "StorageUnit", "p_min_pu", weights=False)
+#     p_max_pu = get_paramer_as_dense(n, "StorageUnit", "p_max_pu", weights=False)
+#     inflow = get_paramer_as_dense(n, "StorageUnit", "inflow", weights=False)
+
+#     hub_blocks = []
+#     for (idx_name, row) in hydro_systems.iterrows():
+#         hub_blocks.append(
+#             {
+#                 "id": id_hydro,
+#                 "block_type": "HydroUnitBlock",
+#                 "NumberReservoirs": 1,
+#                 "NumberArcs": N_ARCS,
+#                 "StartArc": np.full((N_ARCS,), 0, dtype=NP_UINT),
+#                 "EndArc": np.full((N_ARCS,), 1, dtype=NP_UINT),
+#                 "MinPower": 0.0,
+#                 "MaxPower": row.p_nom_opt * row.p_max_pu,
+#                 "MinFlow": 0.0,
+#                 "MaxFlow": 100 * row.p_nom_opt * row.p_max_pu,
+#                 "MinVolumetric": 0.0,
+#                 "MaxVolumetric": row.p_nom_opt * row.max_hours,
+#                 "InitialVolumetric": row.state_of_charge_initial * row.p_nom_opt * row.max_hours,
+#                 "StoringBatteryRho": row.efficiency_store,
+#                 "ExtractingBatteryRho": row.efficiency_dispatch,
+#             }
+#         )
+#         id_hydro += 1
+#     return hub_blocks
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -256,7 +356,10 @@ if __name__ == "__main__":
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
-    res_carriers = snakemake.params.renewable_carriers
+    block_config = snakemake.params.block_config
+    res_carriers = block_config["intermittent_unit_block_carriers"]
+    bub_carriers = block_config["battery_unit_block_carriers"]
+    hub_carriers = block_config["hydro_unit_block_carriers"]
     
     # Read PyPSA
     n = pypsa.Network(snakemake.input[0])
@@ -284,6 +387,25 @@ if __name__ == "__main__":
         for tub_block in tub_blocks:
             add_unit_block(mb, **tub_block)
         unit_count += len(tub_blocks)
+
+        # Add renewable units to the master block
+        rub_blocks = get_renewable_blocks(n, unit_count, res_carriers)
+        for rub_block in rub_blocks:
+            add_unit_block(mb, **rub_block)
+        unit_count += len(rub_blocks)
+
+        # Add battery units [only storage units for now]
+        bub_blocks = get_battery_blocks(n, unit_count, bub_carriers)
+        for bub_block in bub_blocks:
+            add_unit_block(mb, **bub_block)
+        unit_count += len(bub_blocks)
+
+        # # Add hydro units
+        # hub_blocks = get_hydro_blocks(n, unit_count, hub_carriers)
+        # for hub_block in hub_blocks:
+        #     add_unit_block(mb, **hub_block)
+        # unit_count += len(hub_blocks)
+        
     except Exception as e:
         logger.error(e)
     finally:
