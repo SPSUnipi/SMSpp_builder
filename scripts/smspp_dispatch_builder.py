@@ -18,8 +18,6 @@ NP_DOUBLE = np.float64
 NC_UINT = "u4"
 NP_UINT = np.uint32
 
-RES_CARRIERS = ["wind", "solar", "hydro", "on-wind", "off-wind"]
-
 def _type_0D_or_1D(value):
     if isinstance(value, pd.Series) or isinstance(value, list) or isinstance(value, np.ndarray):
         return ("TimeHorizon",)
@@ -143,7 +141,7 @@ def add_demand(
     active_demand[:] = demand.values.transpose()  # indexing between python and SMSpp is different: transpose
     return active_demand
 
-def get_thermal_blocks(n, id_initial, res_carrier=RES_CARRIERS):
+def get_thermal_blocks(n, id_initial, res_carrier):
     """
     Get the parameters of the thermal generators
 
@@ -174,6 +172,7 @@ def get_thermal_blocks(n, id_initial, res_carrier=RES_CARRIERS):
         tub_blocks.append(
             {
                 "id": id_thermal,
+                "block_type": "ThermalUnitBlock",
                 "MinPower": (row.p_nom_opt * p_min_pu.loc[:, idx_name]).values,
                 "MaxPower": (row.p_nom_opt * p_max_pu.loc[:, idx_name]).values,
                 "StartUpCost": 0.0,
@@ -189,128 +188,62 @@ def get_thermal_blocks(n, id_initial, res_carrier=RES_CARRIERS):
         id_thermal += 1
     return tub_blocks
 
-def add_thermal(
+def add_unit_block(
         b,
         id,
+        block_type,
         **kwargs,
     ):
     """
-    Add a thermal unit block to the block
+    Add a unit block to the block
 
     Parameters
     ----------
     b : netCDF4.Group
-        The block where the thermal unit block will be created
-    id_thermal : int
-        The id of the thermal unit block
+        The block where the unit block will be created
+    id : int
+        The id of the unit block
+    block_type : str
+        The type of the unit block
     kwargs : dict
-        The parameters of the thermal unit block
+        The parameters of the unit block
     """
     tub = b.createGroup(f"UnitBlock_{id}")
     tub.id = str(id)
-    tub.type = "ThermalUnitBlock"
+    tub.type = block_type
 
     for key, value in kwargs.items():
         create_variable(tub, key, value)
 
     return tub
 
-    # # MinPower
-    # min_power = tub.createVariable("MinPower", NC_DOUBLE) #, ("TimeHorizon",))
-    # min_power[:] = min_power_pypsa.loc[idx_name]
-
-    # # MaxPower
-    # max_power = tub.createVariable("MaxPower", NC_DOUBLE) #, ("TimeHorizon",))
-    # max_power[:] = max_power_pypsa.loc[idx_name]
-
-    # # StartUpCost
-    # start_up_cost = tub.createVariable("StartUpCost", NC_DOUBLE)
-    # start_up_cost[:] = 0.0
-
-    # # LinearTerm
-    # linear_term = tub.createVariable("LinearTerm", NC_DOUBLE, ("TimeHorizon",))
-    # linear_term[:] = linear_term_pypsa.loc[idx_name] * n.snapshot_weightings.objective.values
-
-    # # ConstantTerm
-    # constant_term = tub.createVariable("ConstantTerm", NC_DOUBLE)
-    # constant_term[:] = 0.0
-
-    # # MinUpTime
-    # min_up_time = tub.createVariable("MinUpTime", NC_DOUBLE)
-    # min_up_time[:] = 0.0
-
-    # # MinDownTime
-    # min_down_time = tub.createVariable("MinDownTime", NC_DOUBLE)
-    # min_down_time[:] = 0.0
-
-    # # InitialPower
-    # initial_power = tub.createVariable("InitialPower", NC_DOUBLE)
-    # initial_power[:] = n.loads_t.p_set.iloc[0, id_thermal]
-
-    # # InitUpDownTime
-    # init_up_down_time = tub.createVariable("InitUpDownTime", NC_DOUBLE)
-    # init_up_down_time[:] = 1.0
-
-    # # InertiaCommitment
-    # inertia_commitment = tub.createVariable("InertiaCommitment", NC_DOUBLE)
-    # inertia_commitment[:] = 1.0
-
-    # return tub
-
-    # min_power_pypsa = thermal_generators.eval("p_nom_opt * p_min_pu")
-    # max_power_pypsa = thermal_generators.eval("p_nom_opt * p_max_pu")
-    # linear_term_pypsa = thermal_generators.marginal_cost
-
-    # for (idx_name, row) in thermal_generators.iterrows():
-
-    #     tub = master.createGroup(f"UnitBlock_{id_thermal}")
-    #     tub.id = str(id_thermal)
-    #     tub.type = "ThermalUnitBlock"
-
-    #     # Create variables
+# def get_renewable_blocks():
 
 
-    #     # MinPower
-    #     min_power = tub.createVariable("MinPower", NC_DOUBLE) #, ("TimeHorizon",))
-    #     min_power[:] = min_power_pypsa.loc[idx_name]
 
-    #     # MaxPower
-    #     max_power = tub.createVariable("MaxPower", NC_DOUBLE) #, ("TimeHorizon",))
-    #     max_power[:] = max_power_pypsa.loc[idx_name]
+#     renewable_generators = n.generators[n.generators.index.isin(renewable_carriers)]
 
-    #     # StartUpCost
-    #     start_up_cost = tub.createVariable("StartUpCost", NC_DOUBLE)
-    #     start_up_cost[:] = 0.0
+# id_ren = id_thermal
 
-    #     # LinearTerm
-    #     linear_term = tub.createVariable("LinearTerm", NC_DOUBLE, ("TimeHorizon",))
-    #     linear_term[:] = linear_term_pypsa.loc[idx_name] * n.snapshot_weightings.objective.values
+# if not renewable_generators.empty:
+#     for (idx_name, row) in renewable_generators.iterrows():
 
-    #     # ConstantTerm
-    #     constant_term = tub.createVariable("ConstantTerm", NC_DOUBLE)
-    #     constant_term[:] = 0.0
+#         tiub = master.createGroup(f"UnitBlock_{id_ren}")
+#         tiub.id = str(id_ren)
+#         tiub.type = "IntermittentUnitBlock"
 
-    #     # MinUpTime
-    #     min_up_time = tub.createVariable("MinUpTime", NC_DOUBLE)
-    #     min_up_time[:] = 0.0
+#         n_max_power = n.generators_t.p_max_pu.loc[:, idx_name] * row.p_nom_opt
+        
 
-    #     # MinDownTime
-    #     min_down_time = tub.createVariable("MinDownTime", NC_DOUBLE)
-    #     min_down_time[:] = 0.0
+#         # max power
+#         max_power = tiub.createVariable("MaxPower", NC_DOUBLE, ("TimeHorizon",))
+#         max_power[:] = n_max_power
 
-    #     # InitialPower
-    #     initial_power = tub.createVariable("InitialPower", NC_DOUBLE)
-    #     initial_power[:] = n.loads_t.p_set.iloc[0, id_thermal]
+#         # # max capacity
+#         # max_capacity = tiub.createVariable("MaxCapacity", NC_DOUBLE)
+#         # max_capacity[:] = row[1].p_nom_max 
 
-    #     # InitUpDownTime
-    #     init_up_down_time = tub.createVariable("InitUpDownTime", NC_DOUBLE)
-    #     init_up_down_time[:] = 1.0
-
-    #     # InertiaCommitment
-    #     inertia_commitment = tub.createVariable("InertiaCommitment", NC_DOUBLE)
-    #     inertia_commitment[:] = 1.0
-
-    #     id_thermal += 1
+#         id_ren += 1
     
 
 
@@ -322,6 +255,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake("smspp_dispatch_builder")
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
+
+    res_carriers = snakemake.params.renewable_carriers
     
     # Read PyPSA
     n = pypsa.Network(snakemake.input[0])
@@ -345,9 +280,9 @@ if __name__ == "__main__":
         add_demand(mb, n.loads_t.p_set)
 
         # Add thermal units to the master block
-        tub_blocks = get_thermal_blocks(n, unit_count)
+        tub_blocks = get_thermal_blocks(n, unit_count, res_carriers)
         for tub_block in tub_blocks:
-            add_thermal(mb, **tub_block)
+            add_unit_block(mb, **tub_block)
         unit_count += len(tub_blocks)
     except Exception as e:
         logger.error(e)

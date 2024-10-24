@@ -37,6 +37,8 @@ rule microgrid_optimizer:
         "scripts/microgrid_optimizer.py"
 
 rule smspp_dispatch_builder:
+    params:
+        renewable_carriers=config['renewable_carriers'],
     input:
         "results/networks/microgrid_" + SNAME + "_optimized.nc"
     output:
