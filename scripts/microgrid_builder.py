@@ -33,6 +33,7 @@ def build_data(
 
     n_days = int(df_pv.shape[0]/24)
 
+    np.random.seed(42)
     for i in bus_loads:
         df_demand_year = np.random.normal(
             np.tile(df_demand_day["demand"], n_days),
@@ -42,7 +43,7 @@ def build_data(
 
     # create hydro time serie
     df_hydro = pd.DataFrame(index=df_pv.index)
-    np.random.seed(42)
+    
     df_hydro["hydro"] = hydro_factor * df_demand.iloc[:, 0].mean() * np.maximum(
         0.0, np.random.normal(1., 1., df_pv.shape[0])
     )  # hydro power generation
@@ -63,6 +64,7 @@ def build_microgrid_model(
     x = 10.389754,
     y = 43.720810,
     hydro_factor = 0.1,
+    max_hours=1,
 ):
     """
     Build a basic microgrid using PyPSA
@@ -147,6 +149,7 @@ def build_microgrid_model(
             capital_cost=assumptions.at["battery", "capital_cost"],
             cyclic_state_of_charge=False,
             state_of_charge_initial=0.,
+            max_hours=max_hours,
         )
 
     # Add the hydro
@@ -159,7 +162,7 @@ def build_microgrid_model(
             capital_cost=assumptions.at["hydro", "capital_cost"],
             cyclic_state_of_charge=False,
             inflow=df_data["hydro"],
-            max_hours=6,
+            max_hours=max_hours,
             state_of_charge_initial=0.,
         )
 
@@ -172,7 +175,7 @@ def build_microgrid_model(
             carrier="AC",
             p_nom_extendable=True,
             capital_cost=assumptions.at["diesel", "capital_cost"],
-            marginal_cost=2*assumptions.at["diesel", "OPEX_marginal"],
+            marginal_cost=assumptions.at["diesel", "OPEX_marginal"],
         )
     return n
 
@@ -205,8 +208,8 @@ def build_assumptions():
     assumptions.at["wind", "lifetime"] = 25  #20  # years
 
     # battery technology
-    assumptions.at["battery", "CAPEX"] = 450  # EUR/kWh
-    assumptions.at["battery", "OPEX_fixed"] = 3  # EUR/kWh/year
+    assumptions.at["battery", "CAPEX"] = 800  # EUR/kWh
+    assumptions.at["battery", "OPEX_fixed"] = 10  # EUR/kWh/year
     assumptions.at["battery", "efficiency"] = 0.9  # [-] per unit
     assumptions.at["battery", "lifetime"] = 10  # years
 

@@ -201,12 +201,16 @@ jobs:
         chmod u+x ../../../build/InvestmentBlock/test/InvestmentBlock_test
         ../../../build/InvestmentBlock/test/InvestmentBlock_test -c ../config/ -S ../config/BSPar.txt InvestmentBlock.nc4
     
-    - name: Test PyPSA - Dispatch microgrid_T_1N
+    - name: Test PyPSA - Dispatch 1-node - only thermal
       run: |
         conda init
         source ~/.bashrc
         conda activate SMSpp_builder
         snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_T_1N.yaml
+  
+    - name: Test PyPSA - Dispatch 1-node - all resources
+      run: |
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_ALL_1N.yaml
 
 #       - name: Configure CMake
 #         shell: bash

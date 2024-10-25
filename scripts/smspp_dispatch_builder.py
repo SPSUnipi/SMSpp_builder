@@ -13,14 +13,27 @@ import numpy as np
 import os
 from helpers import create_logger
 
+DIMENSION_KWARGS = [
+    "TimeHorizon",
+    "NumberUnits",
+    "NumberElectricalGenerators",
+    "NumberNodes",
+    "NumberArcs",
+    "NumberReservoirs",
+    "TotalNumberPieces",
+]
+
 NC_DOUBLE = "f8"
 NP_DOUBLE = np.float64
 NC_UINT = "u4"
 NP_UINT = np.uint32
 
-def _type_0D_or_1D(value):
+def map_variable_type(name, value):
     if isinstance(value, pd.Series) or isinstance(value, list) or isinstance(value, np.ndarray):
-        return ("TimeHorizon",)
+        if name == "hydro":
+            return ("NumberArcs",)
+        else:
+            return ("TimeHorizon",)
     else:
         return ()
 
@@ -42,7 +55,7 @@ def create_variable(b, name, value, dtype=NC_DOUBLE, dim=None):
         The dimensions of the variable, default None
     """
     if dim is None:
-        dim = _type_0D_or_1D(value)
+        dim = map_variable_type(name, value)
     var = b.createVariable(name, dtype, dim)
     var[:] = value
     return var
@@ -192,6 +205,7 @@ def add_unit_block(
         b,
         id,
         block_type,
+        dimension_kwargs=DIMENSION_KWARGS,
         **kwargs,
     ):
     """
@@ -213,7 +227,10 @@ def add_unit_block(
     tub.type = block_type
 
     for key, value in kwargs.items():
-        create_variable(tub, key, value)
+        if key in dimension_kwargs:
+            create_dimension(tub, key, value)
+        else:
+            create_variable(tub, key, value)
 
     return tub
 
@@ -331,21 +348,119 @@ def get_battery_blocks(n, id_initial, bub_carriers):
 #                 "block_type": "HydroUnitBlock",
 #                 "NumberReservoirs": 1,
 #                 "NumberArcs": N_ARCS,
+#                 "TotalNumberPieces": N_ARCS,
 #                 "StartArc": np.full((N_ARCS,), 0, dtype=NP_UINT),
 #                 "EndArc": np.full((N_ARCS,), 1, dtype=NP_UINT),
-#                 "MinPower": 0.0,
-#                 "MaxPower": row.p_nom_opt * row.p_max_pu,
-#                 "MinFlow": 0.0,
-#                 "MaxFlow": 100 * row.p_nom_opt * row.p_max_pu,
+#                 "MinPower": np.array([0.0, 0.0, row.p_nom_opt * row.p_min_pu], dtype=NP_DOUBLE),
+#                 "MaxPower": np.array([row.p_nom_opt * row.p_max_pu, 0.0, 0.0], dtype=NP_DOUBLE),
+#                 "MinFlow": np.array([0.0, 0.0, 1.5*row.p_nom_opt * row.p_min_pu], dtype=NP_DOUBLE),
+#                 "MaxFlow": np.array([1.5*row.p_nom_opt * row.p_max_pu, 1.5*row.p_nom_opt * row.p_max_pu, 0.0], dtype=NP_DOUBLE),
+#                 "Inflows": np.array([inflow.loc[:, idx_name].values]),
 #                 "MinVolumetric": 0.0,
 #                 "MaxVolumetric": row.p_nom_opt * row.max_hours,
 #                 "InitialVolumetric": row.state_of_charge_initial * row.p_nom_opt * row.max_hours,
-#                 "StoringBatteryRho": row.efficiency_store,
-#                 "ExtractingBatteryRho": row.efficiency_dispatch,
+#                 "LinearTerm": row.efficiency_store,
+#                 "ConstantTerm": row.efficiency_dispatch,
+#                 "NumberPieces": np.full((N_ARCS,), 1, dtype=NP_UINT),
 #             }
 #         )
 #         id_hydro += 1
 #     return hub_blocks
+
+def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
+    """
+    Add the hydro units to the master block.
+    This is a raw basic implementation.
+    
+    Parameters
+    ----------
+    mb : netCDF4.Group
+        The master block
+    n : pypsa.Network
+        The PyPSA network
+    unit_count : int
+        The current count of units
+    hub_carriers : list
+        The list of hydro carriers
+    """
+
+    hydro_systems = n.storage_units.loc[n.storage_units.index.isin(hub_carriers)]
+
+    id_hydro = unit_count
+
+    if not hydro_systems.empty:
+        for (idx_name, row) in hydro_systems.iterrows():
+
+            tiub = mb.createGroup(f"UnitBlock_{id_hydro}")
+            tiub.id = str(id_hydro)
+            tiub.type = "HydroUnitBlock"
+
+            tiub.createDimension("NumberReservoirs", 1)  # optional, the number of reservoirs
+            N_ARCS = 3
+            tiub.createDimension("NumberArcs", N_ARCS)  # optional, the number of arcs connecting the reservoirs
+            # No NumberIntervals
+            
+            MAX_FLOW = 100*n.storage_units_t.inflow.loc[:, idx_name].max()
+            P_MAX = row.p_nom_opt * row.p_max_pu
+            P_MIN = row.p_nom_opt * row.p_min_pu
+
+            # StartArc
+            start_arc = tiub.createVariable("StartArc", NC_UINT, ("NumberArcs",))
+            start_arc[:] = np.full((N_ARCS,), 0, dtype=NP_UINT)
+
+            # EndArc
+            end_arc = tiub.createVariable("EndArc", NC_UINT, ("NumberArcs",))
+            end_arc[:] = np.full((N_ARCS,), 1, dtype=NP_UINT)
+
+            # MaxPower
+            max_power = tiub.createVariable("MaxPower", NC_DOUBLE, ("NumberArcs",)) #, ("NumberArcs",)) #, ("TimeHorizon",)) #"NumberArcs"))
+            max_power[:] = np.array([P_MAX, 0., 0.], dtype=NP_DOUBLE)
+
+            # MinPower
+            min_power = tiub.createVariable("MinPower", NC_DOUBLE, ("NumberArcs",)) #, ("NumberArcs",)) #, ("TimeHorizon",)) #"NumberArcs"))
+            min_power[:] = np.array([0., 0., P_MIN], dtype=NP_DOUBLE)
+
+            # MinFlow
+            min_flow = tiub.createVariable("MinFlow", NC_DOUBLE, ("NumberArcs",)) #, ("TimeHorizon",))
+            min_flow[:] = np.array([0., 0., -MAX_FLOW], dtype=NP_DOUBLE)
+
+            # MaxFlow
+            max_flow = tiub.createVariable("MaxFlow", NC_DOUBLE, ("NumberArcs",)) #, ("TimeHorizon",))
+            max_flow[:] = np.array([P_MAX * 100., MAX_FLOW, 0.], dtype=NP_DOUBLE)
+            
+            # MinVolumetric
+            min_volumetric = tiub.createVariable("MinVolumetric", NC_DOUBLE) #, ("TimeHorizon",))
+            min_volumetric[:] = 0.0
+
+            # MaxVolumetric
+            max_volumetric = tiub.createVariable("MaxVolumetric", NC_DOUBLE)
+            max_volumetric[:] = row.p_nom_opt * row.max_hours
+
+            
+            # Inflows
+            inflows = tiub.createVariable("Inflows", NC_DOUBLE, ("NumberReservoirs", "TimeHorizon")) #,"NumberReservoirs",))  #"NumberReservoirs", 
+            inflows[:] = np.array([n.storage_units_t.inflow.loc[:, idx_name]])
+
+            # InitialVolumetric
+            initial_volumetric = tiub.createVariable("InitialVolumetric", NC_DOUBLE) #, ("NumberReservoirs",))
+            initial_volumetric[:] = row.state_of_charge_initial * row.max_hours * row.p_nom_opt
+
+            # NumberPieces
+            pieces = np.full((N_ARCS,), 1, dtype=NP_UINT)
+            number_pieces = tiub.createVariable("NumberPieces", NC_UINT, ("NumberArcs",))
+            number_pieces[:] = pieces
+
+            # TotalNumberPieces
+            tiub.createDimension("TotalNumberPieces", pieces.sum())
+
+            # LinearTerm
+            linear_term = tiub.createVariable("LinearTerm", NC_DOUBLE, ("TotalNumberPieces",))
+            # linear_term[:] = np.array([1/n.storage_units.loc[idx_name, "efficiency_dispatch"], 0., n.storage_units.loc[idx_name, "efficiency_store"]], dtype=NP_DOUBLE)
+            linear_term[:] = np.array([1/n.storage_units.loc[idx_name, "efficiency_dispatch"], 0., n.storage_units.loc[idx_name, "efficiency_store"]], dtype=NP_DOUBLE)
+
+            # ConstTerm
+            const_term = tiub.createVariable("ConstantTerm", NC_DOUBLE, ("TotalNumberPieces",))
+            const_term[:] = np.full((N_ARCS,), 0.0, dtype=NP_DOUBLE)
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -400,14 +515,12 @@ if __name__ == "__main__":
             add_unit_block(mb, **bub_block)
         unit_count += len(bub_blocks)
 
-        # # Add hydro units
-        # hub_blocks = get_hydro_blocks(n, unit_count, hub_carriers)
-        # for hub_block in hub_blocks:
-        #     add_unit_block(mb, **hub_block)
-        # unit_count += len(hub_blocks)
+        # Add hydro units
+        add_hydro_unit_blocks(mb, n, unit_count, hub_carriers)
         
     except Exception as e:
         logger.error(e)
+        raise e
     finally:
         ds.close()
 
