@@ -210,6 +210,9 @@ jobs:
   
     - name: Test PyPSA - Dispatch 1-node - all resources
       run: |
+        conda init
+        source ~/.bashrc
+        conda activate SMSpp_builder
         snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_ALL_1N.yaml
 
 #       - name: Configure CMake
