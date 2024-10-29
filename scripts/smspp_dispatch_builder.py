@@ -123,35 +123,62 @@ def add_master(ds, type, name="Block_0", n_timesteps=0, n_units=0, id=None):
     create_dimension(mb, "NumberElectricalGenerators", n_units)  # TODO: to change
     return mb
 
+def get_bus_idx(n, bus_series, dtype="uint32"):
+    """
+    Returns the numeric index of the bus in the network n for each element of the bus_series.
+    """
+    return bus_series.map(n.buses.index.get_loc).astype(dtype)
+
 def add_network(
-        b,
-        n_nodes,
-        n_lines=0,
-        start_line=None,
-        end_line=None,
-        min_power_flow=None,
-        max_power_flow=None,
-        susceptance=None,
+        mb,
+        n,
     ):
-    """
-    Add the network to the block
-    """
-    # TODO: currently is single-node only
-    if n_nodes > 1:
-        raise NotImplementedError("Only single-node networks are supported")
-    nb = b.createGroup("NetworkData")
-    create_dimension(nb, "NumberNodes", 1)
-    return nb
+
+    # ndg = mb.createGroup("NetworkData")
+    # ndg.createDimension("NumberNodes", len(n.buses))  # Number of nodes
+
+    mb.createDimension("NumberNodes", len(n.buses))  # Number of nodes
+
+    if len(n.buses) > 1:
+        # NOTE: here we assume first generators are added, then storage units etc.
+        all_generators = list(n.generators.bus.str[4:].astype(int).values)
+        all_generators += list(n.storage_units.bus.str[4:].astype(int).values)
+        all_generators = [x for x in all_generators if x is not None]
+
+        mb.createDimension("NumberLines", len(n.lines))  # Number of lines
+
+        # generators' node
+        generator_node = mb.createVariable("GeneratorNode", NC_UINT, ("NumberElectricalGenerators",))
+        generator_node[:] = np.array(all_generators, dtype=NP_UINT)
+
+        # start lines
+        start_line = mb.createVariable("StartLine", NC_UINT, ("NumberLines",))
+        start_line[:] = get_bus_idx(n, n.lines.bus0).values
+        # end lines
+        end_line = mb.createVariable("EndLine", NC_UINT, ("NumberLines",))
+        end_line[:] = get_bus_idx(n, n.lines.bus1).values
+        # Min power flow
+        min_power_flow = mb.createVariable("MinPowerFlow", NC_DOUBLE, ("NumberLines",))
+        min_power_flow[:] = - n.lines.s_nom_opt.values
+        # Max power flow
+        max_power_flow = mb.createVariable("MaxPowerFlow", NC_DOUBLE, ("NumberLines",))
+        max_power_flow[:] = n.lines.s_nom_opt.values
+        # Susceptance
+        susceptance = mb.createVariable("Susceptance", NC_DOUBLE, ("NumberLines",))
+        susceptance[:] = 1 / n.lines.x.values
+
 
 def add_demand(
         b,
-        demand,
+        n,
     ):
     """
     Add the demand to the block
     """
-    active_demand = b.createVariable("ActivePowerDemand", NC_DOUBLE, ("TimeHorizon",)) #("NumberNodes", "TimeHorizon"))
-    active_demand[:] = demand.values.transpose()  # indexing between python and SMSpp is different: transpose
+    demand = n.loads_t.p_set.rename(columns=n.loads.bus)
+    demand_matrix = demand.T.reindex(n.buses.index).fillna(0.)
+    active_demand = b.createVariable("ActivePowerDemand", NC_DOUBLE, ("NumberNodes","TimeHorizon",)) #("NumberNodes", "TimeHorizon"))
+    active_demand[:] = demand_matrix.values  # indexing between python and SMSpp is different: transpose
     return active_demand
 
 def get_thermal_blocks(n, id_initial, res_carrier):
@@ -467,7 +494,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder")
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALL_4N.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
@@ -492,10 +519,10 @@ if __name__ == "__main__":
         mb = add_master(ds, "UCBlock", n_timesteps=n_timesteps, n_units=n_units)
 
         # Add network data to the master block
-        add_network(mb, n.buses.shape[0])
+        ndg = add_network(mb, n)
 
-        # Add demand data to the master block
-        add_demand(mb, n.loads_t.p_set)
+        # Add demand data to the network block
+        add_demand(mb, n)
 
         # Add thermal units to the master block
         tub_blocks = get_thermal_blocks(n, unit_count, res_carriers)

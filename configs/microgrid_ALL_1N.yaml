@@ -21,6 +21,7 @@ model_parameters:  # Parameters for the model (example for microgrid)
   x: 10.389754  # Longitude of the node(s)
   y: 43.720810  # Latitude of the node(s)
   hydro_factor: 0.1  # Fraction of the total demand that the hydro power plant can cover
+  susceptance: 0.01  # Susceptance of the line connecting the nodes
 
 solver_name: gurobi  # PyPSA solver
 # solver_options:
