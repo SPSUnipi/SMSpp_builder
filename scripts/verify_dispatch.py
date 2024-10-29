@@ -68,8 +68,10 @@ if __name__ == "__main__":
     # test tolerances
     if np.abs(err_relative) > tolerances["relative"]:
         logger.error("Relative error is too high")
+        error_flag = True
     if np.abs(err_absolute) > tolerances["absolute"]:
         logger.error("Absolute error is too high")
+        error_flag = True
 
     if error_flag:
         raise Exception("Verification failed")
