@@ -429,7 +429,7 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
             tiub.type = "HydroUnitBlock"
 
             tiub.createDimension("NumberReservoirs", 1)  # optional, the number of reservoirs
-            N_ARCS = 3
+            N_ARCS = 3  # First arc: production, second arc spillage, third arc pumping
             tiub.createDimension("NumberArcs", N_ARCS)  # optional, the number of arcs connecting the reservoirs
             # No NumberIntervals
             
@@ -500,7 +500,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_T_2N.yaml"])
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALL_4N.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
