@@ -165,7 +165,13 @@ def add_network(
         max_power_flow[:] = n.lines.s_nom_opt.values
         # Susceptance
         susceptance = mb.createVariable("Susceptance", NC_DOUBLE, ("NumberLines",))
-        susceptance[:] = 1 / n.lines.x.values
+        if (n.lines.x != 0.).any():
+            # TODO: to revise to support susceptance; as develop_AC_HVDC_mode PR is merged, this should be feasible
+            logger.warning(
+                f"Non-null line susceptance is not yet supported for lines: {n.lines[n.lines.x != 0.].index}\n"
+                "Setting susceptance to 0.0"
+            )
+        susceptance[:] = 0.0
 
 
 def add_demand(
@@ -494,7 +500,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALL_4N.yaml"])
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_T_2N.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 

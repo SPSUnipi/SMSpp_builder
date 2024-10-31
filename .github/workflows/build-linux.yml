@@ -214,6 +214,13 @@ jobs:
         source ~/.bashrc
         conda activate SMSpp_builder
         snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_ALL_1N.yaml
+  
+    - name: Test PyPSA - Dispatch 2-node - only thermal
+      run: |
+        conda init
+        source ~/.bashrc
+        conda activate SMSpp_builder
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_T_2N.yaml
 
 #       - name: Configure CMake
 #         shell: bash

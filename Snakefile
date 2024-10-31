@@ -51,7 +51,7 @@ rule smspp_dispatch_builder:
 rule smspp_dispatch_optimizer:
     input:
         smspp_file="resources/smspp/microgrid" + SNAME + ".nc4",
-        configdir=directory("data/SMSpp/UCBlockSolver/"),
+        configdir="data/SMSpp/UCBlockSolver/",
         config="data/SMSpp/UCBlockSolver/uc_solverconfig.txt",
     output:
         "results/smspp/microgrid" + SNAME + "_optimized.txt"

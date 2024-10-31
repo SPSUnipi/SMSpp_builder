@@ -37,7 +37,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("verify_dispatch")
+        snakemake = mock_snakemake("verify_dispatch", configfiles=["configs/microgrid_ALL_4N.yaml"])
     
     logger = create_logger("verify_dispatch", logfile=snakemake.log[0])
     
