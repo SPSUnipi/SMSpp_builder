@@ -7,7 +7,6 @@ Created on Wed Oct 30 08:12:37 2024
 
 import pandas as pd
 import pypsa
-from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 class Transformation():
     
@@ -23,6 +22,7 @@ class Transformation():
             "IntertiaPower": 0.0
             }
         
+        # TODO check how to manage nan in SMS++
         self.ThermalUnitBlock_parameters = {
                 "InitUpDownTime": lambda up_time_before: up_time_before,
                 "MinUpTime": lambda min_up_time: min_up_time,
@@ -55,10 +55,15 @@ class Transformation():
     def read_file(self, parser):
         self.parameters = pd.read_excel(f"{parser.input_data_path}/{parser.input_name_parameters}", sheet_name=None) 
         
-    def add_IntermittentUnitBlock(self, components_df, components_t, name, n):
+    def add_UnitBlock(self, attr_name, components_df, components_t):
         converted_dict = {}
+        if hasattr(self, attr_name):
+            unitblock_parameters = getattr(self, attr_name)
+        else:
+            print("Blocco non ancora implementato") # TODO metterci un logger e configurarlo decentemente
         
-        for key, func in self.IntermittentUnitBlock_parameters.items():
+        
+        for key, func in unitblock_parameters.items():
             if callable(func):
                 # Estrai i nomi dei parametri dalla funzione
                 param_names = func.__code__.co_varnames[:func.__code__.co_argcount]
@@ -66,14 +71,14 @@ class Transformation():
                 # Valori dei parametri per chiamare la funzione
                 args = []
                 
-                for param in param_names:
+                for param in param_names: # TODO farlo con un try get_as_dense except: error -> guarda da component
                     # Verifica se `param` esiste come chiave in `components_t`
                     if param in components_t:
                         df = components_t[param]
                         
                         # Controlla che il DataFrame non sia vuoto e che contenga l'indice richiesto
-                        if not df.empty and components_df.index.name in df.columns:
-                            args.append(df.loc[components_df.index.name].values[0])
+                        if not df.empty and components_df.name in df.columns:
+                            args.append(df[components_df.name].values)
                         else:
                             # Se le condizioni non sono soddisfatte, prendi il valore da `components_df`
                             args.append(components_df.get(param, 1))
@@ -87,11 +92,8 @@ class Transformation():
                 # Copia direttamente i valori non funzione
                 converted_dict[key] = func
                 
-        self.unitblocks[components_df.index[0]] = converted_dict
+        self.unitblocks[components_df.name] = converted_dict
             
-    
-    def add_ThermalUnitBlock(self, components_df, n):
-        pass
         
         
     def iterate_components(self, n):
@@ -99,10 +101,15 @@ class Transformation():
         
         for components in n.iterate_components(["Generator", "StorageUnit"]):
             components_df = components.df            # DataFrame che contiene tutti i componenti di quel tipo
+            component_type = f"{components_df.index.name.lower()}s_t"
             for component in components_df.index:
                 if any(carrier in component for carrier in renewable_carriers):
-                    self.add_IntermittentUnitBlock(components_df, n.generators_t, components.name, n)
+                    attr_name = "IntermittentUnitBlock_parameters"
                 else:
-                    self.add_ThermalUnitBlock(components_df, n)
+                    attr_name = "ThermalUnitBlock_parameters"
+                
+                self.add_UnitBlock(attr_name, components_df.loc[component], getattr(n, component_type, None))
                     
+        
+
                         
