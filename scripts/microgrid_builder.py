@@ -81,6 +81,7 @@ def build_microgrid_model(
 
     # Create an empty PyPSA network
     n = pypsa.Network()
+    n.add("Carrier", ["AC", "DC", "battery", "hydro", "pv", "wind", "diesel"])
 
     # set the snapshots of the simulation, being the time steps of the data
     # reduce the number of snapshots according to the parameter
@@ -98,6 +99,7 @@ def build_microgrid_model(
         v_nom=0.4,
         x=[x + 0.1*i for i in range(n_buses)],
         y=[y + 0.1*i for i in range(n_buses)],
+        carrier="DC" if susceptance == 0.0 else "AC",
     )
 
     # Add the lines
@@ -107,6 +109,7 @@ def build_microgrid_model(
             f"Line {i}--{i+1}",
             bus0=f"Bus {i}",
             bus1=f"Bus {i+1}",
+            carrier="DC" if susceptance == 0.0 else "AC",
             x=susceptance,
             r=resistance,
             s_nom=10,
@@ -115,14 +118,19 @@ def build_microgrid_model(
 
     # Add the load
     for bus in buses_demand:
-        n.add("Load", f"load bus {bus}", bus=f"Bus {bus}", p_set=df_data[f"demand {bus}"])
+        n.add(
+            "Load",
+            f"load bus {bus}",
+            bus=f"Bus {bus}",
+            p_set=df_data[f"demand {bus}"],
+        )
 
     # Add PV
     if bus_PV is not None:
         n.add(
             "Generator",  # Each RES technology is represented with a "Generator" component
             "pv",
-            carrier="AC",
+            carrier="pv",
             bus=f"Bus {bus_PV}",  # connect the generators to the microgrid bus
             p_max_pu=df_data["pv"],  # specify a maximum per-unit production for every time-step
             capital_cost=assumptions.loc["pv", "capital_cost"],  # specify the capital cost
@@ -134,7 +142,7 @@ def build_microgrid_model(
         n.add(
             "Generator",  # Each RES technology is represented with a "Generator" component
             "wind",
-            carrier="AC",
+            carrier="wind",
             bus=f"Bus {bus_wind}",  # connect the generators to the microgrid bus
             p_max_pu=df_data["wind"],  # specify a maximum per-unit production for every time-step
             capital_cost=assumptions.loc["wind", "capital_cost"],  # specify the capital cost
@@ -147,6 +155,7 @@ def build_microgrid_model(
             "StorageUnit",
             "battery",
             bus=f"Bus {bus_storage}",
+            carrier="battery",
             p_nom_extendable=True,
             capital_cost=assumptions.at["battery", "capital_cost"],
             cyclic_state_of_charge=False,
@@ -160,6 +169,7 @@ def build_microgrid_model(
             "StorageUnit",
             "hydro",
             bus=f"Bus {bus_hydro}",
+            carrier="hydro",
             p_nom_extendable=True,
             capital_cost=assumptions.at["hydro", "capital_cost"],
             cyclic_state_of_charge=False,
@@ -174,7 +184,7 @@ def build_microgrid_model(
             "Generator",
             "diesel",
             bus=f"Bus {bus_diesel}",
-            carrier="AC",
+            carrier="diesel",
             p_nom_extendable=True,
             capital_cost=assumptions.at["diesel", "capital_cost"],
             marginal_cost=assumptions.at["diesel", "OPEX_marginal"],
