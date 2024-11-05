@@ -66,6 +66,7 @@ def build_microgrid_model(
     hydro_factor = 0.1,
     max_hours=1,
     susceptance=0.01,
+    resistance=0.0,
 ):
     """
     Build a basic microgrid using PyPSA
@@ -107,7 +108,7 @@ def build_microgrid_model(
             bus0=f"Bus {i}",
             bus1=f"Bus {i+1}",
             x=susceptance,
-            r=0.,
+            r=resistance,
             s_nom=10,
             s_nom_extendable=True,
         )

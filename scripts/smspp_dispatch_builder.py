@@ -113,14 +113,16 @@ def create_smspp_file(fp, attribute=1):
     ds.setncattr("SMS++_file_type", attribute)  # Set file type to 1 for problem file
     return ds
 
-def add_master(ds, type, name="Block_0", n_timesteps=0, n_units=0, id=None):
+def add_master(ds, type, name="Block_0", n_timesteps=0, n_generators=0, n_elec_gens=None, id=None):
     mb = ds.createGroup(name)  # Create the master block
     if id is not None:
         mb.id = "0"
+    if n_elec_gens is None:
+        n_elec_gens = n_generators
     mb.type = type  # mandatory attribute for all blocks
     create_dimension(mb, "TimeHorizon", n_timesteps)  # Create the time horizon dimension
-    create_dimension(mb, "NumberUnits", n_units)  # Create the number of units
-    create_dimension(mb, "NumberElectricalGenerators", n_units)  # TODO: to change
+    create_dimension(mb, "NumberUnits", n_generators)  # Create the number of units
+    create_dimension(mb, "NumberElectricalGenerators", n_elec_gens)  # Create number of electrical generators
     return mb
 
 def get_bus_idx(n, bus_series, dtype="uint32"):
@@ -132,6 +134,8 @@ def get_bus_idx(n, bus_series, dtype="uint32"):
 def add_network(
         mb,
         n,
+        bub_carriers,
+        hub_carriers,
     ):
 
     # ndg = mb.createGroup("NetworkData")
@@ -142,7 +146,10 @@ def add_network(
     if len(n.buses) > 1:
         # NOTE: here we assume first generators are added, then storage units etc.
         all_generators = list(n.generators.bus.str[4:].astype(int).values)
-        all_generators += list(n.storage_units.bus.str[4:].astype(int).values)
+        battery_units = n.storage_units[n.storage_units.index.isin(bub_carriers)]
+        hydro_units = n.storage_units[n.storage_units.index.isin(hub_carriers)]
+        all_generators += list(battery_units.bus.str[4:].astype(int).values)
+        all_generators += list(np.repeat(hydro_units.bus.str[4:].astype(int).values, 3))  # each hydro unit has 3 arcs
         all_generators = [x for x in all_generators if x is not None]
 
         mb.createDimension("NumberLines", len(n.lines))  # Number of lines
@@ -164,7 +171,7 @@ def add_network(
         max_power_flow = mb.createVariable("MaxPowerFlow", NC_DOUBLE, ("NumberLines",))
         max_power_flow[:] = n.lines.s_nom_opt.values
         # Susceptance
-        susceptance = mb.createVariable("Susceptance", NC_DOUBLE, ("NumberLines",))
+        susceptance = mb.createVariable("LineSusceptance", NC_DOUBLE, ("NumberLines",))
         if (n.lines.x != 0.).any():
             # TODO: to revise to support susceptance; as develop_AC_HVDC_mode PR is merged, this should be feasible
             logger.warning(
@@ -495,6 +502,8 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
             const_term = tiub.createVariable("ConstantTerm", NC_DOUBLE, ("TotalNumberPieces",))
             const_term[:] = np.full((N_ARCS,), 0.0, dtype=NP_DOUBLE)
 
+            id_hydro += 1
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from helpers import mock_snakemake
@@ -512,7 +521,11 @@ if __name__ == "__main__":
     # Read PyPSA
     n = pypsa.Network(snakemake.input[0])
     n_timesteps = len(n.snapshots)
-    n_units = len(n.generators) + len(n.storage_units)  # excluding links for now
+    n_generators = len(n.generators) + len(n.storage_units)  # excluding links for now
+
+    n_hydro = hydro_systems = n.storage_units.loc[n.storage_units.index.isin(hub_carriers)].shape[0]
+
+    n_elec_gens = n_generators + 2 * n_hydro
 
     unit_count = 0
 
@@ -522,10 +535,10 @@ if __name__ == "__main__":
     try:
     
         # Create master block as UCBlock for dispatching purposes
-        mb = add_master(ds, "UCBlock", n_timesteps=n_timesteps, n_units=n_units)
+        mb = add_master(ds, "UCBlock", n_timesteps=n_timesteps, n_generators=n_generators, n_elec_gens=n_elec_gens)
 
         # Add network data to the master block
-        ndg = add_network(mb, n)
+        ndg = add_network(mb, n, bub_carriers, hub_carriers)
 
         # Add demand data to the network block
         add_demand(mb, n)
