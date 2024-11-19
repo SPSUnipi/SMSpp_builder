@@ -11,7 +11,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("microgrid_optimizer")
+        snakemake = mock_snakemake("microgrid_optimizer", configfiles=["configs/microgrid_store_link.yaml"])
     
     logger = create_logger("microgrid_optimizer", logfile=snakemake.log[0])
     
