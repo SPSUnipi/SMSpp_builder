@@ -85,3 +85,15 @@ rule run_all_dispatch:
                 check=True,
                 stdout=sys.stdout,
             )
+
+rule dag:
+    output:
+        dot="results/plots/dag/dag.dot",
+        pdf="results/plots/dag/dag.pdf",
+        png="results/plots/dag/dag.png",
+    shell:
+        r"""
+        snakemake --rulegraph verify_dispatch | sed -n "/digraph/,\$p" > {output.dot}
+        dot -Tpdf -o {output.pdf} {output.dot}
+        dot -Tpng -o {output.png} {output.dot}
+        """
