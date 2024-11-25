@@ -28,6 +28,9 @@ dependencies:
   # SMSpp interaction
   - netCDF4
   - ncompare
+
+  # plotting
+  - graphviz
  
   - pip:
     - git+https://github.com/davide-f/google-drive-downloader@disable_print  # google drive with fix for virus scan
