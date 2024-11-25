@@ -51,8 +51,8 @@ if __name__ == "__main__":
     with open(snakemake.input.smspp_log, "r") as f:
         smspp_log = f.read()
     
-    res = re.search("Upper bound = (.*)\r\n", smspp_log)
-    smspp_obj = float(res.group(1))
+    res = re.search("Upper bound = (.*)\n", smspp_log)
+    smspp_obj = float(res.group(1).replace("\r", ""))
 
     # check tolerances
     err_relative = (smspp_obj - marg_cost.sum())/marg_cost.sum()

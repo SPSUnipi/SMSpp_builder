@@ -104,7 +104,12 @@ def build_microgrid_model(
     )
 
     # Add the lines
-    for i in range(n_buses-1):
+    for i in range(n_buses - 1):
+
+        # Skip the line for bus store
+        if bus_store is not None and (i == bus_store or i == bus_store - 1):
+            continue
+
         n.add(
             "Line",
             f"Line {i}--{i+1}",
@@ -308,7 +313,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("microgrid_builder", configfiles=["configs/microgrid_store_link.yaml"])
+        snakemake = mock_snakemake("microgrid_builder", configfiles=["configs/microgrid_ALL_4N.yaml"])
 
     logger = create_logger("microgrid_builder", logfile=snakemake.log[0])
     

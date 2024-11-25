@@ -160,48 +160,31 @@ def add_network(
         generator_node[:] = np.array(all_generators, dtype=NP_UINT)
 
 
-        if len(n.links) > 0:
-            # start lines
-            start_line = mb.createVariable("StartLine", NC_UINT, ("NumberLines",))
-            start_line[:] = np.concatenate([
-                get_bus_idx(n, n.lines.bus0).values,
-                get_bus_idx(n, n.links.bus0).values
-            ])
-            # end lines
-            end_line = mb.createVariable("EndLine", NC_UINT, ("NumberLines",))
-            end_line[:] = np.concatenate([
-                get_bus_idx(n, n.lines.bus1).values,
-                get_bus_idx(n, n.links.bus1).values
-            ])
-            # Min power flow
-            min_power_flow = mb.createVariable("MinPowerFlow", NC_DOUBLE, ("NumberLines",))
-            min_power_flow[:] = np.concatenate([
-                - n.lines.s_nom_opt.values,
-                n.links.p_nom_opt.values * n.links.p_min_pu.values
-            ])
-            
-            # Max power flow
-            max_power_flow = mb.createVariable("MaxPowerFlow", NC_DOUBLE, ("NumberLines",))
-            max_power_flow[:] = np.concatenate([
-                n.lines.s_nom_opt.values,
-                n.links.p_nom_opt.values * n.links.p_max_pu.values
-            ])
-        else:
-            # start line
-            start_line = mb.createVariable("StartLine", NC_UINT, ("NumberLines",))
-            start_line[:] = get_bus_idx(n, n.lines.bus0).values
-                
-            # end lines
-            end_line = mb.createVariable("EndLine", NC_UINT, ("NumberLines",))
-            end_line[:] = get_bus_idx(n, n.lines.bus1).values
-
-            # Min power flow
-            min_power_flow = mb.createVariable("MinPowerFlow", NC_DOUBLE, ("NumberLines",))
-            min_power_flow[:] = - n.lines.s_nom_opt.values
-            
-            # Max power flow
-            max_power_flow = mb.createVariable("MaxPowerFlow", NC_DOUBLE, ("NumberLines",))
-            max_power_flow[:] = n.lines.s_nom_opt.values
+        # start lines
+        start_line = mb.createVariable("StartLine", NC_UINT, ("NumberLines",))
+        start_line[:] = np.concatenate([
+            get_bus_idx(n, n.lines.bus0).values,
+            get_bus_idx(n, n.links.bus0).values
+        ])
+        # end lines
+        end_line = mb.createVariable("EndLine", NC_UINT, ("NumberLines",))
+        end_line[:] = np.concatenate([
+            get_bus_idx(n, n.lines.bus1).values,
+            get_bus_idx(n, n.links.bus1).values
+        ])
+        # Min power flow
+        min_power_flow = mb.createVariable("MinPowerFlow", NC_DOUBLE, ("NumberLines",))
+        min_power_flow[:] = np.concatenate([
+            - n.lines.s_nom_opt.values,
+            n.links.p_nom_opt.values * n.links.p_min_pu.values
+        ])
+        
+        # Max power flow
+        max_power_flow = mb.createVariable("MaxPowerFlow", NC_DOUBLE, ("NumberLines",))
+        max_power_flow[:] = np.concatenate([
+            n.lines.s_nom_opt.values,
+            n.links.p_nom_opt.values * n.links.p_max_pu.values
+        ])
 
         # Susceptance
         susceptance = mb.createVariable("LineSusceptance", NC_DOUBLE, ("NumberLines",))
@@ -564,7 +547,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALL_1N.yaml"])
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_T_2N.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
