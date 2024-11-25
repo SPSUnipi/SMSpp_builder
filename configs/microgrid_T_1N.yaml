@@ -1,4 +1,4 @@
-name: microgrid_thermal_1N
+name: microgrid_T_1N
 
 model_type: microgrid  # Model type to consider; only microgrid currently implemented
 

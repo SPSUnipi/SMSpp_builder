@@ -1,4 +1,4 @@
-name: microgrid_store_link
+name: microgrid_ALLbutStore_1N
 
 model_type: microgrid  # Model type to consider; only microgrid currently implemented
 
@@ -11,13 +11,13 @@ tolerances:  # Tolerance for the verification of the solution with respect to SM
 apply_weighting_patch: true  # Whether to apply the weighting path to the model: sets stores weighing for stores 1
 
 model_parameters:  # Parameters for the model (example for microgrid)
-  buses_demand: [0, 1]  # (mandatory) List of nodes where demand is installed; the same profile applies to each
-  bus_PV: null  # Node where PV is installed; when null or missing, no PV is installed
-  bus_wind: null  # Node where wind is installed; when null or missing, no wind is installed
-  bus_storage: null  # Node where battery storage is installed; when null or missing, no battery storage is installed
-  bus_store: 1 # Node where the store is installed
+  buses_demand: [0]  # (mandatory) List of nodes where demand is installed; the same profile applies to each
+  bus_PV: 0  # Node where PV is installed; when null or missing, no PV is installed
+  bus_wind: 0  # Node where wind is installed; when null or missing, no wind is installed
+  bus_storage: 0  # Node where battery storage is installed; when null or missing, no battery storage is installed
+  bus_store: null # Node where the store is installed
   bus_diesel: 0  # Node where diesel is installed; when null or missing, no diesel is installed
-  bus_hydro: null  # Node where hydro power plant is installed; when null or missing, no hydro is installed
+  bus_hydro: 0  # Node where hydro power plant is installed; when null or missing, no hydro is installed
                   # the available inflow is calculated proportionally to match a fraction (hydro_factor) of the total demand
   x: 10.389754  # Longitude of the node(s)
   y: 43.720810  # Latitude of the node(s)

@@ -107,7 +107,7 @@ def build_microgrid_model(
     for i in range(n_buses - 1):
 
         # Skip the line for bus store
-        if bus_store is not None and (i == bus_store or i == bus_store - 1):
+        if bus_store is not None and (i+1 == bus_store):
             continue
 
         n.add(
