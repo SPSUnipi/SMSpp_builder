@@ -59,6 +59,7 @@ def build_microgrid_model(
     bus_PV = None, #0,
     bus_wind = None, #3,
     bus_storage = None, #0,
+    bus_store = None, #0
     bus_diesel = None, #2,
     bus_hydro = None, #1,
     x = 10.389754,
@@ -71,7 +72,7 @@ def build_microgrid_model(
     """
     Build a basic microgrid using PyPSA
     """
-    all_buses = [bus_PV, bus_wind, bus_storage, bus_diesel] + buses_demand
+    all_buses = [bus_PV, bus_wind, bus_storage, bus_store, bus_diesel] + buses_demand
     all_buses = [b for b in all_buses if b is not None]
 
     n_buses = max(all_buses) - min(all_buses) + 1
@@ -103,7 +104,12 @@ def build_microgrid_model(
     )
 
     # Add the lines
-    for i in range(n_buses-1):
+    for i in range(n_buses - 1):
+
+        # Skip the line for bus store
+        if bus_store is not None and (i+1 == bus_store):
+            continue
+
         n.add(
             "Line",
             f"Line {i}--{i+1}",
@@ -161,6 +167,31 @@ def build_microgrid_model(
             cyclic_state_of_charge=False,
             state_of_charge_initial=0.,
             max_hours=max_hours,
+        )
+    
+    if bus_store is not None:
+        n.add(
+            "Store",
+            "battery",
+            bus=f"Bus {bus_store}",
+            carrier="battery",
+            p_nom_extendable=True,
+            capital_cost=assumptions.at["battery", "capital_cost"]/3*2,
+            e_initial=0.,
+        )
+
+        n.add(
+            "Link",
+            "battery link",
+            carrier = "battery",
+            bus0 = f"Bus {bus_store}",
+            bus1 = f"Bus {bus_store-1}",
+            p_min_pu = -1,
+            p_max_pu = 1,
+            capital_cost=assumptions.at["battery", "capital_cost"]/3,
+            marginal_cost=assumptions.at["battery", "OPEX_marginal"]/3,
+            efficiency = 1,
+            p_nom_extendable = True
         )
 
     # Add the hydro
@@ -282,7 +313,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("microgrid_builder")
+        snakemake = mock_snakemake("microgrid_builder", configfiles=["configs/microgrid_ALL_4N.yaml"])
 
     logger = create_logger("microgrid_builder", logfile=snakemake.log[0])
     

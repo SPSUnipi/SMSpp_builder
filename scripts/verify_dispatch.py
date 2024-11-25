@@ -52,7 +52,7 @@ if __name__ == "__main__":
         smspp_log = f.read()
     
     res = re.search("Upper bound = (.*)\n", smspp_log)
-    smspp_obj = float(res.group(1))
+    smspp_obj = float(res.group(1).replace("\r", ""))
 
     # check tolerances
     err_relative = (smspp_obj - marg_cost.sum())/marg_cost.sum()

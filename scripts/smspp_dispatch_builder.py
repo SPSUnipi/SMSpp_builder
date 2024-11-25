@@ -146,30 +146,46 @@ def add_network(
     if len(n.buses) > 1:
         # NOTE: here we assume first generators are added, then storage units etc.
         all_generators = list(n.generators.bus.str[4:].astype(int).values)
-        battery_units = n.storage_units[n.storage_units.index.isin(bub_carriers)]
+        battery_units = list(n.storage_units[n.storage_units.index.isin(bub_carriers)].bus.str[4:].astype(int).values)
+        battery_units += list(n.stores[n.stores.index.isin(bub_carriers)].bus.str[4:].astype(int).values)
         hydro_units = n.storage_units[n.storage_units.index.isin(hub_carriers)]
-        all_generators += list(battery_units.bus.str[4:].astype(int).values)
+        all_generators += battery_units
         all_generators += list(np.repeat(hydro_units.bus.str[4:].astype(int).values, 3))  # each hydro unit has 3 arcs
         all_generators = [x for x in all_generators if x is not None]
 
-        mb.createDimension("NumberLines", len(n.lines))  # Number of lines
+        mb.createDimension("NumberLines", len(n.lines)+len(n.links))  # Number of lines
 
         # generators' node
         generator_node = mb.createVariable("GeneratorNode", NC_UINT, ("NumberElectricalGenerators",))
         generator_node[:] = np.array(all_generators, dtype=NP_UINT)
 
+
         # start lines
         start_line = mb.createVariable("StartLine", NC_UINT, ("NumberLines",))
-        start_line[:] = get_bus_idx(n, n.lines.bus0).values
+        start_line[:] = np.concatenate([
+            get_bus_idx(n, n.lines.bus0).values,
+            get_bus_idx(n, n.links.bus0).values
+        ])
         # end lines
         end_line = mb.createVariable("EndLine", NC_UINT, ("NumberLines",))
-        end_line[:] = get_bus_idx(n, n.lines.bus1).values
+        end_line[:] = np.concatenate([
+            get_bus_idx(n, n.lines.bus1).values,
+            get_bus_idx(n, n.links.bus1).values
+        ])
         # Min power flow
         min_power_flow = mb.createVariable("MinPowerFlow", NC_DOUBLE, ("NumberLines",))
-        min_power_flow[:] = - n.lines.s_nom_opt.values
+        min_power_flow[:] = np.concatenate([
+            - n.lines.s_nom_opt.values,
+            n.links.p_nom_opt.values * n.links.p_min_pu.values
+        ])
+        
         # Max power flow
         max_power_flow = mb.createVariable("MaxPowerFlow", NC_DOUBLE, ("NumberLines",))
-        max_power_flow[:] = n.lines.s_nom_opt.values
+        max_power_flow[:] = np.concatenate([
+            n.lines.s_nom_opt.values,
+            n.links.p_nom_opt.values * n.links.p_max_pu.values
+        ])
+
         # Susceptance
         susceptance = mb.createVariable("LineSusceptance", NC_DOUBLE, ("NumberLines",))
         if (n.lines.x != 0.).any():
@@ -349,6 +365,28 @@ def get_battery_blocks(n, id_initial, bub_carriers):
             }
         )
         id_battery += 1
+
+    battery_units = n.stores[n.stores.index.isin(bub_carriers)]
+
+    e_min_pu = get_paramer_as_dense(n, "Store", "e_min_pu", weights=False)
+    e_max_pu = get_paramer_as_dense(n, "Store", "e_max_pu", weights=False)
+
+
+    for (idx_name, row) in battery_units.iterrows():
+        bub_blocks.append(
+            {
+                "id": id_battery,
+                "block_type": "BatteryUnitBlock",
+                "MinPower": (row.e_nom_opt * e_min_pu.loc[:, idx_name]).values / 10,
+                "MaxPower": (row.e_nom_opt * e_max_pu.loc[:, idx_name]).values / 10,
+                "MinStorage": 0.0,
+                "MaxStorage": row.e_nom_opt,
+                "InitialStorage": row.e_initial,
+                "StoringBatteryRho": 1.0,
+                "ExtractingBatteryRho": 1.0,
+            }
+        )
+        id_battery += 1
     return bub_blocks
 
 
@@ -509,7 +547,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALL_4N.yaml"])
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_T_2N.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
@@ -521,7 +559,7 @@ if __name__ == "__main__":
     # Read PyPSA
     n = pypsa.Network(snakemake.input[0])
     n_timesteps = len(n.snapshots)
-    n_generators = len(n.generators) + len(n.storage_units)  # excluding links for now
+    n_generators = len(n.generators) + len(n.storage_units) + len(n.stores) # excluding links for now
 
     n_hydro = hydro_systems = n.storage_units.loc[n.storage_units.index.isin(hub_carriers)].shape[0]
 

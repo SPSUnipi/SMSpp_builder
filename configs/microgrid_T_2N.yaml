@@ -15,6 +15,7 @@ model_parameters:  # Parameters for the model (example for microgrid)
   bus_PV: null  # Node where PV is installed; when null or missing, no PV is installed
   bus_wind: null  # Node where wind is installed; when null or missing, no wind is installed
   bus_storage: null  # Node where battery storage is installed; when null or missing, no battery storage is installed
+  bus_store: null # Node where the store is installed
   bus_diesel: 0  # Node where diesel is installed; when null or missing, no diesel is installed
   bus_hydro: null  # Node where hydro power plant is installed; when null or missing, no hydro is installed
                   # the available inflow is calculated proportionally to match a fraction (hydro_factor) of the total demand
