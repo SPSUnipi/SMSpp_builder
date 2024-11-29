@@ -18,6 +18,7 @@ model_parameters:  # Parameters for the model (example for microgrid)
   bus_store: null # Node where the store is installed
   bus_diesel: 0  # Node where diesel is installed; when null or missing, no diesel is installed
   bus_hydro: null  # Node where hydro power plant is installed; when null or missing, no hydro is installed
+  buses_transformer: None # Nodes connected by a transformer; when null or missing, no trasformer is installed
                   # the available inflow is calculated proportionally to match a fraction (hydro_factor) of the total demand
   x: 10.389754  # Longitude of the node(s)
   y: 43.720810  # Latitude of the node(s)
