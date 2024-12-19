@@ -110,8 +110,11 @@ def build_microgrid_model(
         # Skip the line for bus store
         if bus_store is not None and (i+1 == bus_store):
             continue
+
+        if isinstance(buses_transformer, int):
+            buses_transformer = [buses_transformer]
         
-        if buses_transformer is not None and (i == buses_transformer[0]):
+        if buses_transformer is not None and (i in buses_transformer):
             continue
 
         n.add(
@@ -127,20 +130,21 @@ def build_microgrid_model(
         )
 
     if buses_transformer is not None:
-        n.add(
-        "Transformer",
-        "Transformer",
-        bus0=f"Bus {buses_transformer[0]}",
-        bus1=f"Bus {buses_transformer[1]}",
-        carrier = 'AC',
-        s_nom = 0,
-        r = 1,
-        x = 0.01,
-        model='t',
-        s_nom_extendable = True,
-        capital_cost = assumptions.loc['transformer', 'capital_cost'],
-        marginal_cost = assumptions.loc['transformer', 'OPEX_marginal'],
-        )
+        for bt in buses_transformer:
+            n.add(
+            "Transformer",
+            "Transformer",
+            bus0=f"Bus {bt}",
+            bus1=f"Bus {bt + 1}",
+            carrier = 'AC',
+            s_nom = 0,
+            r = 1,
+            x = 0.01,
+            model='t',
+            s_nom_extendable = True,
+            capital_cost = assumptions.loc['transformer', 'capital_cost'],
+            marginal_cost = assumptions.loc['transformer', 'OPEX_marginal'],
+            )
 
     # Add the load
     for bus in buses_demand:
