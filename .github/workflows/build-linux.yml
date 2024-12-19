@@ -235,3 +235,10 @@ jobs:
         source ~/.bashrc
         conda activate SMSpp_builder
         snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_S_2N.yaml
+
+    - name: Test PyPSA - Transformer 2-nodes
+      run: |
+        conda init
+        source ~/.bashrc
+        conda activate SMSpp_builder
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_Tr_2N.yaml
