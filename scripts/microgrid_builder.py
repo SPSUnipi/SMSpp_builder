@@ -62,6 +62,7 @@ def build_microgrid_model(
     bus_store = None, #0
     bus_diesel = None, #2,
     bus_hydro = None, #1,
+    buses_transformer = None, # [0,1]
     x = 10.389754,
     y = 43.720810,
     hydro_factor = 0.1,
@@ -110,6 +111,12 @@ def build_microgrid_model(
         if bus_store is not None and (i+1 == bus_store):
             continue
 
+        if isinstance(buses_transformer, int):
+            buses_transformer = [buses_transformer]
+        
+        if buses_transformer is not None and (i in buses_transformer):
+            continue
+
         n.add(
             "Line",
             f"Line {i}--{i+1}",
@@ -121,6 +128,23 @@ def build_microgrid_model(
             s_nom=10,
             s_nom_extendable=True,
         )
+
+    if buses_transformer is not None:
+        for bt in buses_transformer:
+            n.add(
+            "Transformer",
+            "Transformer",
+            bus0=f"Bus {bt}",
+            bus1=f"Bus {bt + 1}",
+            carrier = 'AC',
+            s_nom = 0,
+            r = 1,
+            x = 0.01,
+            model='t',
+            s_nom_extendable = True,
+            capital_cost = assumptions.loc['transformer', 'capital_cost'],
+            marginal_cost = assumptions.loc['transformer', 'OPEX_marginal'],
+            )
 
     # Add the load
     for bus in buses_demand:
@@ -230,7 +254,7 @@ def build_assumptions():
     # Initialize the dataframe: columns indicate cost components and rows indicate technologies
     assumptions = pd.DataFrame(
         columns=["CAPEX", "discount rate", "efficiency", "OPEX_fixed", "OPEX_marginal", "lifetime"],
-        index=["default", "pv", "wind", "battery", "diesel"],
+        index=["default", "pv", "wind", "battery", "diesel", "transformer"],
         dtype=float,
     )
 
@@ -266,6 +290,12 @@ def build_assumptions():
     fuel_price = 1.4  # EUR/l
     fuel_energy_density = 10  # kWh/l
     efficiency_diesel = 0.33  # [-] per unit
+
+    # transformer technology
+    assumptions.at["transformer", "CAPEX"] = 100 # EUR/kVA
+    assumptions.at["transformer", "OPEX_fixed"] = 10  # EUR/kVA/year
+    assumptions.at["transformer", "efficiency"] = 0.98  # [-] per unit
+    assumptions.at["transformer", "lifetime"] = 60  # years
 
     maintenance_diesel = 0.05  # EUR/kW/h
 
@@ -313,7 +343,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("microgrid_builder", configfiles=["configs/microgrid_ALL_4N.yaml"])
+        snakemake = mock_snakemake("microgrid_builder", configfiles=["configs/microgrid_Tr_2N.yaml"])
 
     logger = create_logger("microgrid_builder", logfile=snakemake.log[0])
     
