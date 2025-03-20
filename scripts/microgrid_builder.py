@@ -67,7 +67,7 @@ def build_microgrid_model(
     x = 10.389754,
     y = 43.720810,
     hydro_factor = 0.1,
-    max_hours=1,
+    max_hours=6,
     susceptance=0.01,
     resistance=0.0,
 ):
@@ -193,9 +193,9 @@ def build_microgrid_model(
             carrier="battery",
             p_nom_extendable=True,
             capital_cost=assumptions.at["battery", "capital_cost"],
-            cyclic_state_of_charge=e_cycling,
+            cyclic_state_of_charge=False,  # TODO
             state_of_charge_initial=0.,
-            max_hours=max_hours,
+            max_hours=1,
         )
     
     if bus_store is not None:
@@ -233,7 +233,7 @@ def build_microgrid_model(
             carrier="hydro",
             p_nom_extendable=True,
             capital_cost=assumptions.at["hydro", "capital_cost"],
-            cyclic_state_of_charge=e_cycling,
+            cyclic_state_of_charge=False,  # TODO
             inflow=df_data["hydro"],
             max_hours=max_hours,
             state_of_charge_initial=0.,
@@ -293,7 +293,7 @@ def build_assumptions():
     assumptions.at["hydro", "lifetime"] = 60  # years
 
     # diesel technology
-    fuel_price = 1.4  # EUR/l
+    fuel_price = 0.9  # EUR/l
     fuel_energy_density = 10  # kWh/l
     efficiency_diesel = 0.33  # [-] per unit
 
@@ -307,7 +307,7 @@ def build_assumptions():
 
     assumptions.at["diesel", "CAPEX"] = 6e2  # EUR/kW
     assumptions.at["diesel", "OPEX_marginal"] = \
-        (fuel_price / fuel_energy_density * efficiency_diesel + maintenance_diesel)  # EUR/kWh
+        (fuel_price / (fuel_energy_density * efficiency_diesel) + maintenance_diesel)  # EUR/kWh
     assumptions.at["diesel", "lifetime"] = 3  # years
 
     # fill defaults
