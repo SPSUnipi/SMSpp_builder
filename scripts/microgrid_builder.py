@@ -63,6 +63,7 @@ def build_microgrid_model(
     bus_diesel = None, #2,
     bus_hydro = None, #1,
     buses_transformer = None, # [0,1]
+    e_cycling = False,
     x = 10.389754,
     y = 43.720810,
     hydro_factor = 0.1,
@@ -79,6 +80,10 @@ def build_microgrid_model(
     n_buses = max(all_buses) - min(all_buses) + 1
     df_data = build_data(pv_file, wind_file, demand_file, buses_demand, hydro_factor)
     df_data = df_data.iloc[:n_snapshots]
+
+    df_data.loc[df_data.index[0:int(n_snapshots/2)], "hydro"] = 0
+    df_data.loc[:, "hydro"] = 2 * df_data["hydro"]
+
     assumptions = build_assumptions()
 
     # Create an empty PyPSA network
@@ -188,7 +193,7 @@ def build_microgrid_model(
             carrier="battery",
             p_nom_extendable=True,
             capital_cost=assumptions.at["battery", "capital_cost"],
-            cyclic_state_of_charge=False,
+            cyclic_state_of_charge=e_cycling,
             state_of_charge_initial=0.,
             max_hours=max_hours,
         )
@@ -202,6 +207,7 @@ def build_microgrid_model(
             p_nom_extendable=True,
             capital_cost=assumptions.at["battery", "capital_cost"]/3*2,
             e_initial=0.,
+            e_cyclic=e_cycling,
         )
 
         n.add(
@@ -227,7 +233,7 @@ def build_microgrid_model(
             carrier="hydro",
             p_nom_extendable=True,
             capital_cost=assumptions.at["hydro", "capital_cost"],
-            cyclic_state_of_charge=False,
+            cyclic_state_of_charge=e_cycling,
             inflow=df_data["hydro"],
             max_hours=max_hours,
             state_of_charge_initial=0.,
@@ -343,7 +349,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("microgrid_builder", configfiles=["configs/microgrid_Tr_2N.yaml"])
+        snakemake = mock_snakemake("microgrid_builder", configfiles=["configs/microgrid_ALLbutStore_1N_cycling.yaml"])
 
     logger = create_logger("microgrid_builder", logfile=snakemake.log[0])
     

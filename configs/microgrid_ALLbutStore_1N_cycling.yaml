@@ -1,8 +1,8 @@
-name: microgrid_ALL_5N
+name: microgrid_ALLbutStore_1N_cycling
 
 model_type: microgrid  # Model type to consider; only microgrid currently implemented
 
-n_snapshots: 24  # Number of snapshots to consider
+n_snapshots: 192  # Number of snapshots to consider
 
 tolerances:  # Tolerance for the verification of the solution with respect to SMS++
   absolute: 0.01
@@ -11,16 +11,16 @@ tolerances:  # Tolerance for the verification of the solution with respect to SM
 apply_weighting_patch: true  # Whether to apply the weighting path to the model: sets stores weighing for stores 1
 
 model_parameters:  # Parameters for the model (example for microgrid)
-  buses_demand: [0, 1, 2, 3]  # (mandatory) List of nodes where demand is installed; the same profile applies to each
+  buses_demand: [0]  # (mandatory) List of nodes where demand is installed; the same profile applies to each
   bus_PV: 0  # Node where PV is installed; when null or missing, no PV is installed
   bus_wind: 0  # Node where wind is installed; when null or missing, no wind is installed
   bus_storage: 0  # Node where battery storage is installed; when null or missing, no battery storage is installed
-  bus_store: 4 # Node where the store is installed
+  bus_store: null # Node where the store is installed
   bus_diesel: 0  # Node where diesel is installed; when null or missing, no diesel is installed
   buses_transformer: null  # Nodes connected by a transformer; the trasformer is connected to each node and its following
   bus_hydro: 0  # Node where hydro power plant is installed; when null or missing, no hydro is installed
                   # the available inflow is calculated proportionally to match a fraction (hydro_factor) of the total demand
-  e_cycling: false  # Whether to consider the energy cycling constraint
+  e_cycling: true  # Whether to consider the energy cycling constraint
   x: 10.389754  # Longitude of the node(s)
   y: 43.720810  # Latitude of the node(s)
   hydro_factor: 0.1  # Fraction of the total demand that the hydro power plant can cover
@@ -34,3 +34,4 @@ block_config:
   intermittent_unit_block_carriers: [solar, onwind, offwind-ac, offwind-dc, hydro]
   battery_unit_block_carriers: [battery]
   hydro_unit_block_carriers: [hydro]
+  

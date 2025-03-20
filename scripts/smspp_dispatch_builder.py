@@ -355,6 +355,11 @@ def get_battery_blocks(n, id_initial, bub_carriers):
 
     bub_blocks = []
     for (idx_name, row) in battery_units.iterrows():
+        # when cycling, set negative initial storage
+        init_store = row.state_of_charge_initial * row.p_nom_opt * row.max_hours
+        if row.cyclic_state_of_charge:
+            init_store = -1.
+        
         bub_blocks.append(
             {
                 "id": id_battery,
@@ -363,7 +368,7 @@ def get_battery_blocks(n, id_initial, bub_carriers):
                 "MaxPower": (row.p_nom_opt * p_max_pu.loc[:, idx_name]).values,
                 "MinStorage": 0.0,
                 "MaxStorage": row.p_nom_opt * row.max_hours,
-                "InitialStorage": row.state_of_charge_initial * row.p_nom_opt * row.max_hours,
+                "InitialStorage": init_store,
                 "StoringBatteryRho": row.efficiency_store,
                 "ExtractingBatteryRho": row.efficiency_dispatch,
             }
@@ -525,7 +530,11 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
 
             # InitialVolumetric
             initial_volumetric = tiub.createVariable("InitialVolumetric", NC_DOUBLE) #, ("NumberReservoirs",))
-            initial_volumetric[:] = row.state_of_charge_initial * row.max_hours * row.p_nom_opt
+            # when cycling set negative initial storage            
+            if row.cyclic_state_of_charge:
+                initial_volumetric[:] = -1.
+            else:
+                initial_volumetric[:] = row.state_of_charge_initial * row.max_hours * row.p_nom_opt
 
             # NumberPieces
             pieces = np.full((N_ARCS,), 1, dtype=NP_UINT)
