@@ -386,8 +386,8 @@ def get_battery_blocks(n, id_initial, bub_carriers):
             {
                 "id": id_battery,
                 "block_type": "BatteryUnitBlock",
-                "MinPower": (row.e_nom_opt * e_min_pu.loc[:, idx_name]).values / 10,
-                "MaxPower": (row.e_nom_opt * e_max_pu.loc[:, idx_name]).values / 10,
+                "MinPower": (row.e_nom_opt * e_min_pu.loc[:, idx_name]).values * 10,
+                "MaxPower": (row.e_nom_opt * e_max_pu.loc[:, idx_name]).values * 10,
                 "MinStorage": 0.0,
                 "MaxStorage": row.e_nom_opt,
                 "InitialStorage": row.e_initial,
@@ -493,11 +493,13 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
 
             # StartArc
             start_arc = tiub.createVariable("StartArc", NC_UINT, ("NumberArcs",))
-            start_arc[:] = np.full((N_ARCS,), 0, dtype=NP_UINT)
+            start_arc[:] = np.array([0, 0, 0], dtype=NP_UINT)
+            # start_arc[:] = np.array([0, 0, 1], dtype=NP_UINT)
 
             # EndArc
             end_arc = tiub.createVariable("EndArc", NC_UINT, ("NumberArcs",))
-            end_arc[:] = np.full((N_ARCS,), 1, dtype=NP_UINT)
+            end_arc[:] = np.array([1, 1, 1], dtype=NP_UINT)
+            # end_arc[:] = np.array([1, 1, 0], dtype=NP_UINT)
 
             # MaxPower
             max_power = tiub.createVariable("MaxPower", NC_DOUBLE, ("NumberArcs",)) #, ("NumberArcs",)) #, ("TimeHorizon",)) #"NumberArcs"))
