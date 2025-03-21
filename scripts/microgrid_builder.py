@@ -45,7 +45,7 @@ def build_data(
     df_hydro = pd.DataFrame(index=df_pv.index)
     
     df_hydro["hydro"] = hydro_factor * df_demand.iloc[:, 0].mean() * np.maximum(
-        0.0, np.random.normal(1., 1., df_pv.shape[0])
+        0.0, np.random.normal(1., .2, df_pv.shape[0])
     )  # hydro power generation
 
     return pd.concat([df_pv[["pv"]], df_wind[["wind"]], df_hydro[["hydro"]], df_demand], axis=1)
