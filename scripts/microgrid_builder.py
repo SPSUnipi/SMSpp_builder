@@ -293,7 +293,7 @@ def build_assumptions():
     assumptions.at["hydro", "lifetime"] = 60  # years
 
     # diesel technology
-    fuel_price = 0.9  # EUR/l
+    fuel_price = 0.4  # EUR/l
     fuel_energy_density = 10  # kWh/l
     efficiency_diesel = 0.33  # [-] per unit
 
