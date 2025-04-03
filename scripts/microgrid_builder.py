@@ -233,8 +233,10 @@ def build_microgrid_model(
             carrier="hydro",
             p_nom_extendable=True,
             capital_cost=assumptions.at["hydro", "capital_cost"],
-            cyclic_state_of_charge=False,  # TODO
+            cyclic_state_of_charge=e_cycling,  # TODO
             inflow=df_data["hydro"],
+            efficiency_store=.99,
+            efficiency_dispatch=0.99,
             max_hours=max_hours,
             state_of_charge_initial=0.,
         )
