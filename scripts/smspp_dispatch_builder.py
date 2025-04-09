@@ -483,7 +483,7 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
             tiub.type = "HydroUnitBlock"
 
             tiub.createDimension("NumberReservoirs", 1)  # optional, the number of reservoirs
-            N_ARCS = 3  # First arc: production, second arc spillage, third arc pumping
+            N_ARCS = 2  # First arc: production, second arc spillage, third arc pumping
             tiub.createDimension("NumberArcs", N_ARCS)  # optional, the number of arcs connecting the reservoirs
             # No NumberIntervals
             
@@ -493,29 +493,29 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
 
             # StartArc
             start_arc = tiub.createVariable("StartArc", NC_UINT, ("NumberArcs",))
-            start_arc[:] = np.array([0, 0, 0], dtype=NP_UINT)
+            start_arc[:] = np.array([0, 0], dtype=NP_UINT)
             # start_arc[:] = np.array([0, 0, 1], dtype=NP_UINT)
 
             # EndArc
             end_arc = tiub.createVariable("EndArc", NC_UINT, ("NumberArcs",))
-            end_arc[:] = np.array([1, 1, 1], dtype=NP_UINT)
+            end_arc[:] = np.array([1, 1], dtype=NP_UINT)
             # end_arc[:] = np.array([1, 1, 0], dtype=NP_UINT)
 
             # MaxPower
             max_power = tiub.createVariable("MaxPower", NC_DOUBLE, ("NumberArcs",)) #, ("NumberArcs",)) #, ("TimeHorizon",)) #"NumberArcs"))
-            max_power[:] = np.array([P_MAX, 0., 0.], dtype=NP_DOUBLE)
+            max_power[:] = np.array([P_MAX, 0.], dtype=NP_DOUBLE)
 
             # MinPower
             min_power = tiub.createVariable("MinPower", NC_DOUBLE, ("NumberArcs",)) #, ("NumberArcs",)) #, ("TimeHorizon",)) #"NumberArcs"))
-            min_power[:] = np.array([0., 0., P_MIN], dtype=NP_DOUBLE)
+            min_power[:] = np.array([0., P_MIN], dtype=NP_DOUBLE)
 
             # MinFlow
             min_flow = tiub.createVariable("MinFlow", NC_DOUBLE, ("NumberArcs",)) #, ("TimeHorizon",))
-            min_flow[:] = np.array([0., 0., -MAX_FLOW], dtype=NP_DOUBLE)
+            min_flow[:] = np.array([0., -MAX_FLOW], dtype=NP_DOUBLE)
 
             # MaxFlow
             max_flow = tiub.createVariable("MaxFlow", NC_DOUBLE, ("NumberArcs",)) #, ("TimeHorizon",))
-            max_flow[:] = np.array([P_MAX * 100., MAX_FLOW, 0.], dtype=NP_DOUBLE)
+            max_flow[:] = np.array([MAX_FLOW, 0.], dtype=NP_DOUBLE)
             
             # MinVolumetric
             min_volumetric = tiub.createVariable("MinVolumetric", NC_DOUBLE) #, ("TimeHorizon",))
@@ -549,7 +549,7 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
             # LinearTerm
             linear_term = tiub.createVariable("LinearTerm", NC_DOUBLE, ("TotalNumberPieces",))
             # linear_term[:] = np.array([1/n.storage_units.loc[idx_name, "efficiency_dispatch"], 0., n.storage_units.loc[idx_name, "efficiency_store"]], dtype=NP_DOUBLE)
-            linear_term[:] = np.array([n.storage_units.loc[idx_name, "efficiency_dispatch"], 0., n.storage_units.loc[idx_name, "efficiency_store"]], dtype=NP_DOUBLE)
+            linear_term[:] = np.array([n.storage_units.loc[idx_name, "efficiency_dispatch"], 1/n.storage_units.loc[idx_name, "efficiency_store"]], dtype=NP_DOUBLE)
 
             # ConstTerm
             const_term = tiub.createVariable("ConstantTerm", NC_DOUBLE, ("TotalNumberPieces",))
@@ -562,7 +562,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALL_5N.yaml"])
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALLbutStore_1N_cycling.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
