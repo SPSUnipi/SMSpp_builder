@@ -44,9 +44,8 @@ def build_data(
     # create hydro time serie
     df_hydro = pd.DataFrame(index=df_pv.index)
     
-    df_hydro["hydro"] = hydro_factor * df_demand.iloc[:, 0].mean() * np.maximum(
-        0.0, np.random.normal(1., .2, df_pv.shape[0])
-    )  # hydro power generation
+    hydro_vec =  np.maximum(0.0, np.random.normal(1., .2, df_pv.shape[0]))  # hydro power generation
+    df_hydro["hydro"] = hydro_vec / hydro_vec.sum() * hydro_factor * df_demand.sum().sum()
 
     return pd.concat([df_pv[["pv"]], df_wind[["wind"]], df_hydro[["hydro"]], df_demand], axis=1)
 
@@ -81,8 +80,10 @@ def build_microgrid_model(
     df_data = build_data(pv_file, wind_file, demand_file, buses_demand, hydro_factor)
     df_data = df_data.iloc[:n_snapshots]
 
+    tot_demand = df_data[[f"demand {bus}" for bus in buses_demand]].sum().sum()
     df_data.loc[df_data.index[0:int(n_snapshots/2)], "hydro"] = 0
     df_data.loc[:, "hydro"] = 2 * df_data["hydro"]
+    df_data["hydro"] = df_data["hydro"] / df_data["hydro"].sum() * hydro_factor * tot_demand
 
     assumptions = build_assumptions()
 
@@ -193,7 +194,7 @@ def build_microgrid_model(
             carrier="battery",
             p_nom_extendable=True,
             capital_cost=assumptions.at["battery", "capital_cost"],
-            cyclic_state_of_charge=False,  # TODO
+            cyclic_state_of_charge=e_cycling,  # TODO
             state_of_charge_initial=0.,
             max_hours=1,
         )
