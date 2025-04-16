@@ -48,6 +48,18 @@ rule smspp_dispatch_builder:
     script:
         "scripts/smspp_dispatch_builder.py"
 
+rule smspp_investment_builder:
+    params:
+        block_config=config['block_config'],
+    input:
+        "results/networks/microgrid" + SNAME + "_optimized.nc"
+    output:
+        "resources/smspp/microgrid" + SNAME + "_investment.nc4"
+    log:
+        "logs/smspp_investment_builder" + SNAME + ".log"
+    script:
+        "scripts/smspp_investment_builder.py"
+
 rule smspp_dispatch_optimizer:
     input:
         smspp_file="resources/smspp/microgrid" + SNAME + ".nc4",
