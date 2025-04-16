@@ -21,13 +21,16 @@ from smspp_dispatch_builder import (
     NP_DOUBLE,
     NC_UINT,
     NP_UINT,
+    NC_BYTE,
+    NP_BYTE,
     DIMENSION_KWARGS,
     create_smspp_file,
     get_paramer_as_dense,
     add_master,
     get_bus_idx,
     add_demand,
-    add_unit_block
+    add_unit_block,
+    get_param_list,
 )
 
 def get_bus_idx(n, bus_series, dtype="uint32"):
@@ -361,14 +364,111 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
 
             id_hydro += 1
 
+# get the nominal name
+def nom_obj(obj):
+    if obj.lower() == "line":
+        return "s_nom"
+    elif obj.lower() == "store":
+        return "e_nom"
+    else:
+        return "p_nom"
+
+# get list of component by type
+def get_param_list(dict_objs, col, obj_order, nom_obj, max_val=1e6):
+    """
+    Get the list of parameters for each object in the network
+    """
+    lvals = []
+    initial_id = 0
+    for obj in obj_order:
+        if col == "type":
+            lvals += [obj for i in range(len(dict_objs[obj].index))]
+        elif col == "id": # get the id starting from the first object
+            lvals += list(initial_id + dict_objs[obj].index)
+        else:
+            df_col = nom_obj(obj) + col[3:] if col.startswith("nom_") else col
+            lvals += list(dict_objs[obj][df_col].values)
+        initial_id += len(dict_objs[obj].index)
+    if isinstance(lvals[0], float) or isinstance(lvals[0], int):
+        lvals = [np.clip(val, -max_val, max_val) for val in lvals]
+    return lvals
+
+def get_extendable_dict(
+        n,
+        obj_order=["Generator", "StorageUnit", "Link", "Line", "Store"],
+    ):
+    # get the extendable objects
+    dict_extendable = {
+        obj: (
+            n.df(obj)
+            .reset_index()
+            .rename(columns={obj: "name"})
+            .query(f"{nom_obj(obj)}_extendable == True")
+        )
+        for obj in obj_order
+    }
+
+    # Number of extendable assets
+    n_extendable = sum(len(df.index) for df in dict_extendable.values())
+
+    return dict_extendable, n_extendable
+
+def add_investment_block(ds, n):
+    """
+    Add the investment block to the dataset
+    Parameters
+    ----------
+    ds : netCDF4.Dataset
+        The dataset
+    n : pypsa.Network
+        The PyPSA network
+    """
+    dict_extendable, n_extendable = get_extendable_dict(n)
+
+    b = ds.createGroup("InvestmentBlock")  # Create the first main block
+
+    # master.id = "0"  # mandatory attribute for all blocks
+    b.type = "InvestmentBlock"  # mandatory attribute for all blocks
+
+    # num of extendables
+    b.createDimension("NumAssets", n_extendable)
+
+    # assets
+    assets = b.createVariable("Assets", NC_UINT, ("NumAssets",))
+    assets[:] = get_param_list(dict_extendable, "id")
+
+    # investment cost
+    cost = b.createVariable("Cost", NC_DOUBLE, ("NumAssets",))
+    cost[:] = get_param_list(dict_extendable, "capital_cost")
+
+    # Lower bound
+    lb = b.createVariable("LowerBound", NC_DOUBLE, ("NumAssets",))
+    lb[:] = np.full((n_extendable,), 1e-6, dtype=NP_DOUBLE)
+    # lb[:] = get_param_list(dict_extendable, "nom_min")
+
+    # Upper bound
+    ub = b.createVariable("UpperBound", NC_DOUBLE, ("NumAssets",))
+    ub[:] = get_param_list(dict_extendable, "nom_max")
+
+    # Installed Capacity
+    ic = b.createVariable("InstalledCapacity", NC_DOUBLE, ("NumAssets",))
+    ic[:] = np.full((n_extendable,), 0., dtype=NP_DOUBLE)
+
+    # asset type
+    asset_type = b.createVariable("AssetType", NC_BYTE, ("NumAssets",))
+    asset_type[:] = np.full((n_extendable,), 0, dtype=NP_BYTE)
+
+    return b
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALLbutStore_1N_cycling.yaml"])
+        snakemake = mock_snakemake("smspp_investment_builder", configfiles=["configs/microgrid_T_1N.yaml"])
     
-    logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
+    logger = create_logger("smspp_investment_builder", logfile=snakemake.log[0])
 
     block_config = snakemake.params.block_config
     res_carriers = block_config["intermittent_unit_block_carriers"]
@@ -390,9 +490,11 @@ if __name__ == "__main__":
     ds = create_smspp_file(snakemake.output[0])
 
     try:
+        # Add investment block
+        b = add_investment_block(ds, n)
     
         # Create master block as UCBlock for dispatching purposes
-        mb = add_master(ds, "UCBlock", n_timesteps=n_timesteps, n_generators=n_generators, n_elec_gens=n_elec_gens)
+        mb = add_master(b, "UCBlock", name="InnerBlock", n_timesteps=n_timesteps, n_generators=n_generators, n_elec_gens=n_elec_gens)
 
         # Add network data to the master block
         ndg = add_network(mb, n, bub_carriers, hub_carriers)
