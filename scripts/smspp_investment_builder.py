@@ -30,8 +30,9 @@ from smspp_dispatch_builder import (
     get_bus_idx,
     add_demand,
     add_unit_block,
-    get_param_list,
 )
+
+OBJ_ORDER=["Generator", "StorageUnit", "Link", "Line", "Store"]
 
 def get_bus_idx(n, bus_series, dtype="uint32"):
     """
@@ -374,13 +375,13 @@ def nom_obj(obj):
         return "p_nom"
 
 # get list of component by type
-def get_param_list(dict_objs, col, obj_order, nom_obj, max_val=1e6):
+def get_param_list(dict_objs, col, max_val=1e6):
     """
     Get the list of parameters for each object in the network
     """
     lvals = []
     initial_id = 0
-    for obj in obj_order:
+    for obj in OBJ_ORDER:
         if col == "type":
             lvals += [obj for i in range(len(dict_objs[obj].index))]
         elif col == "id": # get the id starting from the first object
@@ -393,10 +394,7 @@ def get_param_list(dict_objs, col, obj_order, nom_obj, max_val=1e6):
         lvals = [np.clip(val, -max_val, max_val) for val in lvals]
     return lvals
 
-def get_extendable_dict(
-        n,
-        obj_order=["Generator", "StorageUnit", "Link", "Line", "Store"],
-    ):
+def get_extendable_dict(n):
     # get the extendable objects
     dict_extendable = {
         obj: (
@@ -405,7 +403,7 @@ def get_extendable_dict(
             .rename(columns={obj: "name"})
             .query(f"{nom_obj(obj)}_extendable == True")
         )
-        for obj in obj_order
+        for obj in OBJ_ORDER
     }
 
     # Number of extendable assets
