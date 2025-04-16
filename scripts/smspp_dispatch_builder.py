@@ -27,6 +27,8 @@ NC_DOUBLE = "f8"
 NP_DOUBLE = np.float64
 NC_UINT = "u4"
 NP_UINT = np.uint32
+NC_BYTE = "B"
+NP_BYTE = np.byte
 
 def map_variable_type(name, value):
     if isinstance(value, pd.Series) or isinstance(value, list) or isinstance(value, np.ndarray):
