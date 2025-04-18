@@ -72,6 +72,18 @@ rule smspp_dispatch_optimizer:
     shell:
         "ucblock_solver {input.smspp_file} -c {input.configdir} -S {input.config} >> {output}"
 
+rule smspp_investment_optimizer:
+    input:
+        smspp_file="resources/smspp/microgrid" + SNAME + "_investment.nc4",
+        configdir="data/SMSpp/InvestmentBlockTest/config",
+        config="data/SMSpp/InvestmentBlockTest/config/BSPar.txt",
+    output:
+        "results/smspp/microgrid" + SNAME + "_investment_optimized.txt"
+    log:
+        "logs/smspp_dispatch_optimizer" + SNAME + ".log"
+    shell:
+        "InvestmentBlock_test {input.smspp_file} -c {input.configdir}/ -S {input.config} >> {output}"
+
 rule verify_dispatch:
     params:
         tolerances=config['tolerances']

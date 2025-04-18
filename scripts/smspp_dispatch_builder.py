@@ -216,7 +216,7 @@ def add_demand(
     active_demand[:] = demand_matrix.values  # indexing between python and SMSpp is different: transpose
     return active_demand
 
-def get_thermal_blocks(n, id_initial, res_carrier):
+def get_thermal_blocks(n, id_initial, thermal_carrier):
     """
     Get the parameters of the thermal generators
 
@@ -234,7 +234,7 @@ def get_thermal_blocks(n, id_initial, res_carrier):
     list
         The list of dictionaries with the parameters of the thermal blocks
     """
-    thermal_generators = n.generators[~n.generators.index.isin(res_carrier)]
+    thermal_generators = n.generators[n.generators.index.isin(thermal_carrier)]
 
     id_thermal = id_initial
 
@@ -401,6 +401,41 @@ def get_battery_blocks(n, id_initial, bub_carriers):
     return bub_blocks
 
 
+
+def get_slack_blocks(n, id_initial, slack_carrier):
+    """
+    Get the parameters of the slack generators
+    
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network
+    id_initial : int
+        The initial id for the slack generators
+    slack_carrier : list
+        The list of slack carriers
+    """
+    slack_generators = n.generators[n.generators.carrier.isin(slack_carrier)]
+
+    id_slack = id_initial
+
+    p_max_pu = get_paramer_as_dense(n, "Generator", "p_max_pu", weights=False)
+    marginal_cost = get_paramer_as_dense(n, "Generator", "marginal_cost", weights=False)
+
+    sub_blocks = []
+    for (idx_name, row) in slack_generators.iterrows():
+        sub_blocks.append(
+            {
+                "id": id_slack,
+                "block_type": "SlackUnitBlock",
+                "MinPower": 0.0,
+                "MaxPower": p_max_pu.loc[:, idx_name].values,
+                "ActivePowerCost": marginal_cost.loc[:, idx_name].values,
+            }
+        )
+        id_slack += 1
+    return sub_blocks
+
 # def get_hydro_blocks(n, id_initial, hub_carriers):
 #     """
 #     Get the parameters of the hydro units
@@ -564,14 +599,16 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALLbutStore_1N_cycling.yaml"])
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_T_1N.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
     block_config = snakemake.params.block_config
     res_carriers = block_config["intermittent_unit_block_carriers"]
+    ther_carriers = block_config["thermal_unit_block_carriers"]
     bub_carriers = block_config["battery_unit_block_carriers"]
     hub_carriers = block_config["hydro_unit_block_carriers"]
+    sub_carriers = block_config["slack_unit_block_carriers"]
     
     # Read PyPSA
     n = pypsa.Network(snakemake.input[0])
@@ -599,7 +636,7 @@ if __name__ == "__main__":
         add_demand(mb, n)
 
         # Add thermal units to the master block
-        tub_blocks = get_thermal_blocks(n, unit_count, res_carriers)
+        tub_blocks = get_thermal_blocks(n, unit_count, ther_carriers)
         for tub_block in tub_blocks:
             add_unit_block(mb, **tub_block)
         unit_count += len(tub_blocks)
@@ -615,6 +652,12 @@ if __name__ == "__main__":
         for bub_block in bub_blocks:
             add_unit_block(mb, **bub_block)
         unit_count += len(bub_blocks)
+
+        # Add battery units [only storage units for now]
+        sub_blocks = get_slack_blocks(n, unit_count, sub_carriers)
+        for sub_block in sub_blocks:
+            add_unit_block(mb, **sub_block)
+        unit_count += len(sub_blocks)
 
         # Add hydro units
         add_hydro_unit_blocks(mb, n, unit_count, hub_carriers)

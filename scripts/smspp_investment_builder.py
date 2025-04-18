@@ -110,7 +110,7 @@ def add_network(
         susceptance[:] = 0.0
 
 
-def get_thermal_blocks(n, id_initial, res_carrier):
+def get_thermal_blocks(n, id_initial, ther_carriers):
     """
     Get the parameters of the thermal generators
 
@@ -120,7 +120,7 @@ def get_thermal_blocks(n, id_initial, res_carrier):
         The PyPSA network
     id_initial : int
         The initial id for the thermal generators
-    res_carrier : list
+    ther_carriers : list
         The list of renewable carriers
 
     Returns
@@ -128,7 +128,7 @@ def get_thermal_blocks(n, id_initial, res_carrier):
     list
         The list of dictionaries with the parameters of the thermal blocks
     """
-    thermal_generators = n.generators[~n.generators.index.isin(res_carrier)]
+    thermal_generators = n.generators[n.generators.index.isin(ther_carriers)]
 
     id_thermal = id_initial
 
@@ -260,6 +260,40 @@ def get_battery_blocks(n, id_initial, bub_carriers):
         )
         id_battery += 1
     return bub_blocks
+
+def get_slack_blocks(n, id_initial, slack_carrier):
+    """
+    Get the parameters of the slack generators
+    
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network
+    id_initial : int
+        The initial id for the slack generators
+    slack_carrier : list
+        The list of slack carriers
+    """
+    slack_generators = n.generators[n.generators.carrier.isin(slack_carrier)]
+
+    id_slack = id_initial
+
+    p_max_pu = get_paramer_as_dense(n, "Generator", "p_max_pu", weights=False)
+    marginal_cost = get_paramer_as_dense(n, "Generator", "marginal_cost", weights=False)
+
+    sub_blocks = []
+    for (idx_name, row) in slack_generators.iterrows():
+        sub_blocks.append(
+            {
+                "id": id_slack,
+                "block_type": "SlackUnitBlock",
+                # "MinPower": 0.0,
+                "MaxPower": p_max_pu.loc[:, idx_name].values,
+                "ActivePowerCost": marginal_cost.loc[:, idx_name].values,
+            }
+        )
+        id_slack += 1
+    return sub_blocks
 
 
 def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
@@ -441,7 +475,7 @@ def add_investment_block(ds, n):
 
     # Lower bound
     lb = b.createVariable("LowerBound", NC_DOUBLE, ("NumAssets",))
-    lb[:] = np.full((n_extendable,), 1e-6, dtype=NP_DOUBLE)
+    lb[:] = np.full((n_extendable,), 1e-3, dtype=NP_DOUBLE)
     # lb[:] = get_param_list(dict_extendable, "nom_min")
 
     # Upper bound
@@ -470,8 +504,10 @@ if __name__ == "__main__":
 
     block_config = snakemake.params.block_config
     res_carriers = block_config["intermittent_unit_block_carriers"]
+    ther_carriers = block_config["thermal_unit_block_carriers"]
     bub_carriers = block_config["battery_unit_block_carriers"]
     hub_carriers = block_config["hydro_unit_block_carriers"]
+    sub_carriers = block_config["slack_unit_block_carriers"]
     
     # Read PyPSA
     n = pypsa.Network(snakemake.input[0])
@@ -501,7 +537,7 @@ if __name__ == "__main__":
         add_demand(mb, n)
 
         # Add thermal units to the master block
-        tub_blocks = get_thermal_blocks(n, unit_count, res_carriers)
+        tub_blocks = get_thermal_blocks(n, unit_count, ther_carriers)
         for tub_block in tub_blocks:
             add_unit_block(mb, **tub_block)
         unit_count += len(tub_blocks)
@@ -517,6 +553,12 @@ if __name__ == "__main__":
         for bub_block in bub_blocks:
             add_unit_block(mb, **bub_block)
         unit_count += len(bub_blocks)
+
+        # Add battery units [only storage units for now]
+        sub_blocks = get_slack_blocks(n, unit_count, sub_carriers)
+        for sub_block in sub_blocks:
+            add_unit_block(mb, **sub_block)
+        unit_count += len(sub_blocks)
 
         # Add hydro units
         add_hydro_unit_blocks(mb, n, unit_count, hub_carriers)

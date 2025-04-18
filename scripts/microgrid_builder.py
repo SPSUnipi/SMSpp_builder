@@ -63,6 +63,8 @@ def build_microgrid_model(
     bus_hydro = None, #1,
     buses_transformer = None, # [0,1]
     e_cycling = False,
+    add_load_shedding = False,
+    load_shedding = 1000,
     x = 10.389754,
     y = 43.720810,
     hydro_factor = 0.1,
@@ -99,6 +101,8 @@ def build_microgrid_model(
         df_data.index,
         default_snapshot_weightings=365*24/n_snapshots
     )
+
+    max_shedding = max(df_data[[f"demand {i}" for i in buses_demand]].sum(axis=1))
 
     # Add buses to the microgrid
     n.madd(
@@ -214,7 +218,7 @@ def build_microgrid_model(
         n.add(
             "Link",
             "battery link",
-            carrier = "battery",
+            carrier = "battery link",
             bus0 = f"Bus {bus_store}",
             bus1 = f"Bus {bus_store-1}",
             p_min_pu = -1,
@@ -253,6 +257,18 @@ def build_microgrid_model(
             capital_cost=assumptions.at["diesel", "capital_cost"],
             marginal_cost=assumptions.at["diesel", "OPEX_marginal"],
         )
+    
+    # add load shedding
+    if add_load_shedding:
+        for bus in n.buses.index:
+            n.add(
+                "Generator",
+                f"Curtailment_{bus}",
+                bus=bus,
+                carrier="curtailment",
+                p_nom=max_shedding,
+                marginal_cost=load_shedding,
+            )
     return n
 
 
