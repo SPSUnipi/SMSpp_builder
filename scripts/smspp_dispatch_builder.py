@@ -235,7 +235,7 @@ def get_thermal_blocks(n, id_initial, thermal_carrier):
     list
         The list of dictionaries with the parameters of the thermal blocks
     """
-    thermal_generators = n.generators[n.generators.index.isin(thermal_carrier)]
+    thermal_generators = n.generators[n.generators.carrier.isin(thermal_carrier)]
 
     id_thermal = id_initial
 
@@ -310,7 +310,7 @@ def get_renewable_blocks(n, id_initial, res_carrier):
     res_carrier : list
         The list of renewable carriers
     """
-    renewable_generators = n.generators[n.generators.index.isin(res_carrier)]
+    renewable_generators = n.generators[n.generators.carrier.isin(res_carrier)]
 
     id_renewable = id_initial
 
@@ -600,7 +600,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_T_1N.yaml"])
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALLbuthydro_5N.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
@@ -649,16 +649,16 @@ if __name__ == "__main__":
         unit_count += len(rub_blocks)
 
         # Add battery units [only storage units for now]
-        bub_blocks = get_battery_blocks(n, unit_count, bub_carriers)
-        for bub_block in bub_blocks:
-            add_unit_block(mb, **bub_block)
-        unit_count += len(bub_blocks)
-
-        # Add battery units [only storage units for now]
         sub_blocks = get_slack_blocks(n, unit_count, sub_carriers)
         for sub_block in sub_blocks:
             add_unit_block(mb, **sub_block)
         unit_count += len(sub_blocks)
+
+        # Add battery units [only storage units for now]
+        bub_blocks = get_battery_blocks(n, unit_count, bub_carriers)
+        for bub_block in bub_blocks:
+            add_unit_block(mb, **bub_block)
+        unit_count += len(bub_blocks)
 
         # Add hydro units
         add_hydro_unit_blocks(mb, n, unit_count, hub_carriers)
