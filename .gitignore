@@ -41,6 +41,7 @@ SCIPOptSuite*
 # Optimization files
 *.lp
 *.nc4
+*investment_candidates.txt
 
 # snakemake folders
 .snakemake*

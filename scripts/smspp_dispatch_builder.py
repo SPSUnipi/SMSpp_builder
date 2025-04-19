@@ -18,6 +18,7 @@ DIMENSION_KWARGS = [
     "NumberUnits",
     "NumberElectricalGenerators",
     "NumberNodes",
+    "NumberAssets",
     "NumberArcs",
     "NumberReservoirs",
     "TotalNumberPieces",

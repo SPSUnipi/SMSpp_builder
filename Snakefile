@@ -97,6 +97,19 @@ rule verify_dispatch:
     script:
         "scripts/verify_dispatch.py"
 
+rule verify_investment:
+    params:
+        tolerances=config['tolerances']
+    input:
+        pypsa_network="results/networks/microgrid" + SNAME + "_optimized.nc",
+        smspp_log="results/smspp/microgrid" + SNAME + "_investment_optimized.txt",
+    output:
+        touch("results/microgrid" + SNAME + "_investment_complete.txt")
+    log:
+        "logs/verify_investment" + SNAME + "_investment.log"
+    script:
+        "scripts/verify_investment.py"
+
 rule run_all_dispatch:
     run:
         import subprocess
@@ -105,6 +118,19 @@ rule run_all_dispatch:
             print(str(s_name))
             subprocess.run(
                 f"snakemake -j1 verify_dispatch --configfile {str(s_name)} --force",
+                shell=True,
+                check=True,
+                stdout=sys.stdout,
+            )
+
+rule run_all_investment:
+    run:
+        import subprocess
+        import sys
+        for s_name in Path("configs").glob("*.yaml"):
+            print(str(s_name))
+            subprocess.run(
+                f"snakemake -j1 verify_investment --configfile {str(s_name)} --force",
                 shell=True,
                 check=True,
                 stdout=sys.stdout,

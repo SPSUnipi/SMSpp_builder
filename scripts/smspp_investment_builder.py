@@ -149,7 +149,7 @@ def get_thermal_blocks(n, id_initial, ther_carriers):
                 "ConstantTerm": 0.0,
                 "MinUpTime": 0.0,
                 "MinDownTime": 0.0,
-                "InitialPower": 0.0, #n.loads_t.p_set.iloc[0, id_initial],
+                "InitialPower": 1.0, #n.loads_t.p_set.iloc[0, id_initial],
                 "InitUpDownTime": 1.0,
                 "InertiaCommitment": 1.0,
             }
@@ -278,8 +278,7 @@ def get_slack_blocks(n, id_initial, slack_carrier):
 
     id_slack = id_initial
 
-    p_max_pu = get_paramer_as_dense(n, "Generator", "p_max_pu", weights=False)
-    marginal_cost = get_paramer_as_dense(n, "Generator", "marginal_cost", weights=False)
+    marginal_cost = get_paramer_as_dense(n, "Generator", "marginal_cost")
 
     sub_blocks = []
     for (idx_name, row) in slack_generators.iterrows():
@@ -288,7 +287,7 @@ def get_slack_blocks(n, id_initial, slack_carrier):
                 "id": id_slack,
                 "block_type": "SlackUnitBlock",
                 # "MinPower": 0.0,
-                "MaxPower": p_max_pu.loc[:, idx_name].values,
+                "MaxPower": np.repeat(row.p_nom_opt, n_timesteps),
                 "ActivePowerCost": marginal_cost.loc[:, idx_name].values,
             }
         )
