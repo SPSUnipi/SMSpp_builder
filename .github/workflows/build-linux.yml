@@ -208,12 +208,26 @@ jobs:
         conda activate SMSpp_builder
         snakemake -j 4 -call verify_dispatch --configfile ./configs/T_1N.yaml
   
+    - name: Test PyPSA - Dispatch 1-node - all resources except hydro and store
+      run: |
+        conda init
+        source ~/.bashrc
+        conda activate SMSpp_builder
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/ALLbuthydrostore_1N.yaml
+  
     - name: Test PyPSA - Dispatch 1-node - all resources except store
       run: |
         conda init
         source ~/.bashrc
         conda activate SMSpp_builder
         snakemake -j 4 -call verify_dispatch --configfile ./configs/ALLbutStore_1N.yaml
+  
+    - name: Test PyPSA - Dispatch 1-node - all resources except store with cycling constraint
+      run: |
+        conda init
+        source ~/.bashrc
+        conda activate SMSpp_builder
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/ALLbutStore_1N_cycling.yaml
   
     - name: Test PyPSA - Dispatch 2-node - only thermal
       run: |
@@ -242,3 +256,10 @@ jobs:
         source ~/.bashrc
         conda activate SMSpp_builder
         snakemake -j 4 -call verify_dispatch --configfile ./configs/Tr_2N.yaml
+  
+    - name: Test PyPSA - Investment 1-node - all resources except hydro and store
+      run: |
+        conda init
+        source ~/.bashrc
+        conda activate SMSpp_builder
+        snakemake -j 4 -call verify_investment --configfile ./configs/ALLbuthydrostore_1N.yaml
