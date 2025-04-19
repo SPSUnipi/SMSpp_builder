@@ -27,7 +27,7 @@ model_parameters:  # Parameters for the model (example for microgrid)
   susceptance: 0.01  # Susceptance of the line connecting the nodes
   resistance: 0.01  # Resistance of the line connecting the nodes
 
-solver_name: gurobi  # PyPSA solver
+solver_name: highs  # PyPSA solver
 # solver_options:
 
 block_config:

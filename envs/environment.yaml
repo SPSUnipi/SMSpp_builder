@@ -19,6 +19,7 @@ dependencies:
   - glpk
   - gurobi
   - cplex
+  - highspy
 
   # for jupyter
   - jupyter
