@@ -21,6 +21,7 @@ model_parameters:  # Parameters for the model (example for microgrid)
   bus_hydro: 0  # Node where hydro power plant is installed; when null or missing, no hydro is installed
                   # the available inflow is calculated proportionally to match a fraction (hydro_factor) of the total demand
   e_cycling: false  # Whether to consider the energy cycling constraint
+  add_load_shedding: true  # Node to install load shedding
   x: 10.389754  # Longitude of the node(s)
   y: 43.720810  # Latitude of the node(s)
   hydro_factor: 0.1  # Fraction of the total demand that the hydro power plant can cover
@@ -31,7 +32,7 @@ solver_name: gurobi  # PyPSA solver
 # solver_options:
 
 block_config:
-  intermittent_unit_block_carriers: [solar, onwind, offwind-ac, offwind-dc, hydro]
+  intermittent_unit_block_carriers: [pv, wind, hydro]
   thermal_unit_block_carriers: [diesel]
   battery_unit_block_carriers: [battery]
   hydro_unit_block_carriers: [hydro]

@@ -31,7 +31,7 @@ solver_name: gurobi  # PyPSA solver
 # solver_options:
 
 block_config:
-  intermittent_unit_block_carriers: [solar, onwind, offwind-ac, offwind-dc, hydro]
+  intermittent_unit_block_carriers: [pv, wind, hydro]
   thermal_unit_block_carriers: [diesel]
   battery_unit_block_carriers: [battery]
   hydro_unit_block_carriers: [hydro]
