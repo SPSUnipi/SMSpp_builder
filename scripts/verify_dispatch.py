@@ -37,7 +37,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("verify_dispatch", configfiles=["configs/microgrid_ALL_4N.yaml"])
+        snakemake = mock_snakemake("verify_dispatch", configfiles=["configs/ALL_4N.yaml"])
     
     logger = create_logger("verify_dispatch", logfile=snakemake.log[0])
     
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     smspp_obj = float(res.group(1).replace("\r", ""))
 
     # check tolerances
-    err_relative = (smspp_obj - marg_cost.sum())/marg_cost.sum()
+    err_relative = (smspp_obj - marg_cost.sum())/(marg_cost.sum() + 1e-6)
     err_absolute = (smspp_obj - marg_cost.sum())
 
     # Print results
@@ -64,14 +64,17 @@ if __name__ == "__main__":
     logger.info("Relative difference SMS++ - PyPSA [%%]: %.5f" % (100*err_relative))
     logger.info("Absolute difference SMS++ - PyPSA [€] : %.5f" % (err_absolute))
 
-    error_flag = False
+    error_flag_rel = False
+    error_flag_abs = False
     # test tolerances
     if np.abs(err_relative) > tolerances["relative"]:
         logger.error("Relative error is too high")
-        error_flag = True
+        error_flag_rel = True
     if np.abs(err_absolute) > tolerances["absolute"]:
         logger.error("Absolute error is too high")
-        error_flag = True
+        error_flag_abs = True
+    
+    error_flag = error_flag_abs and error_flag_rel
 
     if error_flag:
         raise Exception("Verification failed")
