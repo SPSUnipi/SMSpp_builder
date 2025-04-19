@@ -513,7 +513,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_investment_builder", configfiles=["configs/microgrid_ALLbuthydrostore_1N.yaml"])
+        snakemake = mock_snakemake("smspp_investment_builder", configfiles=["configs/ALLbuthydrostore_1N.yaml"])
     
     logger = create_logger("smspp_investment_builder", logfile=snakemake.log[0])
 

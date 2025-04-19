@@ -1,4 +1,4 @@
-name: microgrid_ALL_5N
+name: ALL_5N
 
 model_type: microgrid  # Model type to consider; only microgrid currently implemented
 

@@ -206,39 +206,39 @@ jobs:
         conda init
         source ~/.bashrc
         conda activate SMSpp_builder
-        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_T_1N.yaml
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/T_1N.yaml
   
     - name: Test PyPSA - Dispatch 1-node - all resources except store
       run: |
         conda init
         source ~/.bashrc
         conda activate SMSpp_builder
-        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_ALLbutStore_1N.yaml
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/ALLbutStore_1N.yaml
   
     - name: Test PyPSA - Dispatch 2-node - only thermal
       run: |
         conda init
         source ~/.bashrc
         conda activate SMSpp_builder
-        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_T_2N.yaml
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/T_2N.yaml
   
     - name: Test PyPSA - Dispatch 5-node - all resources
       run: |
         conda init
         source ~/.bashrc
         conda activate SMSpp_builder
-        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_ALL_5N.yaml
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/ALL_5N.yaml
 
     - name: Test PyPSA - Store and Link 3-nodes
       run: |
         conda init
         source ~/.bashrc
         conda activate SMSpp_builder
-        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_S_2N.yaml
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/S_2N.yaml
 
     - name: Test PyPSA - Transformer 2-nodes
       run: |
         conda init
         source ~/.bashrc
         conda activate SMSpp_builder
-        snakemake -j 4 -call verify_dispatch --configfile ./configs/microgrid_Tr_2N.yaml
+        snakemake -j 4 -call verify_dispatch --configfile ./configs/Tr_2N.yaml

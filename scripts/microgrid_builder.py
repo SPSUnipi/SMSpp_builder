@@ -368,7 +368,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("microgrid_builder", configfiles=["configs/microgrid_ALLbutStore_1N_cycling.yaml"])
+        snakemake = mock_snakemake("microgrid_builder", configfiles=["configs/ALLbutStore_1N_cycling.yaml"])
 
     logger = create_logger("microgrid_builder", logfile=snakemake.log[0])
     

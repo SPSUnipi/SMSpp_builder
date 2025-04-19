@@ -1,7 +1,7 @@
 from pathlib import Path
 
 if "config" not in globals() or not config:
-    fp = "configs/microgrid_T_1N.yaml"
+    fp = "configs/T_1N.yaml"
     print("No config file specified. Using default config file: " + fp + "\n")
     configfile: fp
 
@@ -19,11 +19,11 @@ rule microgrid_builder:
     output:
         "resources/networks/microgrid" + SNAME + ".nc"
     log:
-        "logs/microgrid_builder" + SNAME + ".log"
+        "logs/builder" + SNAME + ".log"
     script:
         "scripts/microgrid_builder.py"
 
-rule microgrid_optimizer:
+rule mirogrid_optimizer:
     params:
         solver_name = config['solver_name'],
         solver_options = config.get('solver_options', {}),
@@ -32,7 +32,7 @@ rule microgrid_optimizer:
     output:
         "results/networks/microgrid" + SNAME + "_optimized.nc"
     log:
-        "logs/microgrid_optimizer" + SNAME + ".log"
+        "logs/optimizer" + SNAME + ".log"
     script:
         "scripts/microgrid_optimizer.py"
 

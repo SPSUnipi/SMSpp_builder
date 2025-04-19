@@ -600,7 +600,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/microgrid_ALLbuthydro_5N.yaml"])
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/ALLbuthydro_5N.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
