@@ -443,14 +443,14 @@ def get_extendable_dict(n, exclude_carriers=[]):
     }
 
     # network assets
-    pre_nid = len(dict_extendable[NETWORK_ASSETS[0]])
+    pre_nid = len(n.df(NETWORK_ASSETS[0]))
     for nobj in NETWORK_ASSETS[1:]:
         dict_extendable[nobj].index = dict_extendable[nobj].index + pre_nid
         pre_nid += len(dict_extendable[nobj].index)
     
     # other assets
     UNIT_ASSETS = [obj for obj in OBJ_ORDER if obj not in NETWORK_ASSETS]
-    pre_uid = len(dict_extendable[UNIT_ASSETS[0]])
+    pre_uid = len(n.df(UNIT_ASSETS[0]))
     for uobj in UNIT_ASSETS[1:]:
         dict_extendable[uobj].index = dict_extendable[uobj].index + pre_uid
         pre_uid += len(dict_extendable[uobj].index)

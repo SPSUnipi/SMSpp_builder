@@ -1,0 +1,40 @@
+name: microgrid_ALLbuthydrostore_1N
+
+model_type: microgrid  # Model type to consider; only microgrid currently implemented
+
+n_snapshots: 24  # Number of snapshots to consider
+
+tolerances:  # Tolerance for the verification of the solution with respect to SMS++
+  absolute: 0.01
+  relative: 0.00001
+
+apply_weighting_patch: true  # Whether to apply the weighting path to the model: sets stores weighing for stores 1
+
+model_parameters:  # Parameters for the model (example for microgrid)
+  buses_demand: [0]  # (mandatory) List of nodes where demand is installed; the same profile applies to each
+  bus_PV: 0  # Node where PV is installed; when null or missing, no PV is installed
+  bus_wind: 0  # Node where wind is installed; when null or missing, no wind is installed
+  bus_storage: 0  # Node where battery storage is installed; when null or missing, no battery storage is installed
+  bus_store: null # Node where the store is installed
+  bus_diesel: 0  # Node where diesel is installed; when null or missing, no diesel is installed
+  buses_transformer: null  # Nodes connected by a transformer; the trasformer is connected to each node and its following
+  bus_hydro: null  # Node where hydro power plant is installed; when null or missing, no hydro is installed
+                  # the available inflow is calculated proportionally to match a fraction (hydro_factor) of the total demand
+  e_cycling: false  # Whether to consider the energy cycling constraint
+  add_load_shedding: true  # Node to install load shedding
+  x: 10.389754  # Longitude of the node(s)
+  y: 43.720810  # Latitude of the node(s)
+  hydro_factor: 0.1  # Fraction of the total demand that the hydro power plant can cover
+  susceptance: 0.01  # Susceptance of the line connecting the nodes
+  resistance: 0.01  # Resistance of the line connecting the nodes
+
+solver_name: gurobi  # PyPSA solver
+# solver_options:
+
+block_config:
+  intermittent_unit_block_carriers: [pv, wind, hydro]
+  thermal_unit_block_carriers: [diesel]
+  battery_unit_block_carriers: [battery]
+  hydro_unit_block_carriers: [hydro]
+  slack_unit_block_carriers: [curtailment]
+  
