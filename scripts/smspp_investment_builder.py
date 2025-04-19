@@ -33,6 +33,7 @@ from smspp_dispatch_builder import (
 )
 
 OBJ_ORDER=["Generator", "StorageUnit", "Link", "Line", "Store"]
+NETWORK_ASSETS = ["Line", "Link"]
 
 def get_bus_idx(n, bus_series, dtype="uint32"):
     """
@@ -86,9 +87,9 @@ def add_network(
         # Min power flow
         min_power_flow = mb.createVariable("MinPowerFlow", NC_DOUBLE, ("NumberLines",))
         min_power_flow[:] = np.concatenate([
-            n.lines.s_min_pu.values,
+            -n.lines.s_max_pu.values,
             n.links.p_min_pu.values,
-            n.transformers.p_min_pu.values,
+            -n.transformers.s_max_pu.values,
         ])
         
         # Max power flow
@@ -96,7 +97,7 @@ def add_network(
         max_power_flow[:] = np.concatenate([
             n.lines.s_max_pu.values,
             n.links.p_max_pu.values,
-            n.transformers.p_max_pu.values,
+            n.transformers.s_max_pu.values,
         ])
 
         # Susceptance
@@ -128,7 +129,7 @@ def get_thermal_blocks(n, id_initial, ther_carriers):
     list
         The list of dictionaries with the parameters of the thermal blocks
     """
-    thermal_generators = n.generators[n.generators.index.isin(ther_carriers)]
+    thermal_generators = n.generators[n.generators.carrier.isin(ther_carriers)]
 
     id_thermal = id_initial
 
@@ -170,7 +171,7 @@ def get_renewable_blocks(n, id_initial, res_carrier):
     res_carrier : list
         The list of renewable carriers
     """
-    renewable_generators = n.generators[n.generators.index.isin(res_carrier)]
+    renewable_generators = n.generators[n.generators.carrier.isin(res_carrier)]
 
     id_renewable = id_initial
 
@@ -413,38 +414,53 @@ def get_param_list(dict_objs, col, max_val=1e6):
     Get the list of parameters for each object in the network
     """
     lvals = []
-    initial_id = 0
     for obj in OBJ_ORDER:
         if col == "type":
             lvals += [obj for i in range(len(dict_objs[obj].index))]
         elif col == "id": # get the id starting from the first object
-            lvals += list(initial_id + dict_objs[obj].index)
+            lvals += list(dict_objs[obj].index)
+        elif col == "smspp_asset": # get the id starting from the first object
+            lvals += list(dict_objs[obj].loc[:, "smspp_asset"].values)
         else:
             df_col = nom_obj(obj) + col[3:] if col.startswith("nom_") else col
             lvals += list(dict_objs[obj][df_col].values)
-        initial_id += len(dict_objs[obj].index)
     if isinstance(lvals[0], float) or isinstance(lvals[0], int):
         lvals = [np.clip(val, -max_val, max_val) for val in lvals]
     return lvals
 
-def get_extendable_dict(n):
+def get_extendable_dict(n, exclude_carriers=[]):
     # get the extendable objects
     dict_extendable = {
         obj: (
             n.df(obj)
             .reset_index()
             .rename(columns={obj: "name"})
+            .query(f"carrier not in {exclude_carriers}")
             .query(f"{nom_obj(obj)}_extendable == True")
+            .assign(smspp_asset=lambda x: (1 if obj in NETWORK_ASSETS else 0))
         )
         for obj in OBJ_ORDER
     }
+
+    # network assets
+    pre_nid = len(dict_extendable[NETWORK_ASSETS[0]])
+    for nobj in NETWORK_ASSETS[1:]:
+        dict_extendable[nobj].index = dict_extendable[nobj].index + pre_nid
+        pre_nid += len(dict_extendable[nobj].index)
+    
+    # other assets
+    UNIT_ASSETS = [obj for obj in OBJ_ORDER if obj not in NETWORK_ASSETS]
+    pre_uid = len(dict_extendable[UNIT_ASSETS[0]])
+    for uobj in UNIT_ASSETS[1:]:
+        dict_extendable[uobj].index = dict_extendable[uobj].index + pre_uid
+        pre_uid += len(dict_extendable[uobj].index)
 
     # Number of extendable assets
     n_extendable = sum(len(df.index) for df in dict_extendable.values())
 
     return dict_extendable, n_extendable
 
-def add_investment_block(ds, n):
+def add_investment_block(ds, n, exclude_carriers=[]):
     """
     Add the investment block to the dataset
     Parameters
@@ -454,7 +470,7 @@ def add_investment_block(ds, n):
     n : pypsa.Network
         The PyPSA network
     """
-    dict_extendable, n_extendable = get_extendable_dict(n)
+    dict_extendable, n_extendable = get_extendable_dict(n, exclude_carriers)
 
     b = ds.createGroup("InvestmentBlock")  # Create the first main block
 
@@ -487,7 +503,7 @@ def add_investment_block(ds, n):
 
     # asset type
     asset_type = b.createVariable("AssetType", NC_BYTE, ("NumAssets",))
-    asset_type[:] = np.full((n_extendable,), 0, dtype=NP_BYTE)
+    asset_type[:] = get_param_list(dict_extendable, "smspp_asset")
 
     return b
 
@@ -497,7 +513,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_investment_builder", configfiles=["configs/microgrid_T_1N.yaml"])
+        snakemake = mock_snakemake("smspp_investment_builder", configfiles=["configs/microgrid_ALLbuthydrostore_1N.yaml"])
     
     logger = create_logger("smspp_investment_builder", logfile=snakemake.log[0])
 
@@ -524,7 +540,7 @@ if __name__ == "__main__":
 
     try:
         # Add investment block
-        b = add_investment_block(ds, n)
+        b = add_investment_block(ds, n, sub_carriers)
     
         # Create master block as UCBlock for dispatching purposes
         mb = add_master(b, "UCBlock", name="InnerBlock", n_timesteps=n_timesteps, n_generators=n_generators, n_elec_gens=n_elec_gens)
@@ -548,16 +564,16 @@ if __name__ == "__main__":
         unit_count += len(rub_blocks)
 
         # Add battery units [only storage units for now]
-        bub_blocks = get_battery_blocks(n, unit_count, bub_carriers)
-        for bub_block in bub_blocks:
-            add_unit_block(mb, **bub_block)
-        unit_count += len(bub_blocks)
-
-        # Add battery units [only storage units for now]
         sub_blocks = get_slack_blocks(n, unit_count, sub_carriers)
         for sub_block in sub_blocks:
             add_unit_block(mb, **sub_block)
         unit_count += len(sub_blocks)
+
+        # Add battery units [only storage units for now]
+        bub_blocks = get_battery_blocks(n, unit_count, bub_carriers)
+        for bub_block in bub_blocks:
+            add_unit_block(mb, **bub_block)
+        unit_count += len(bub_blocks)
 
         # Add hydro units
         add_hydro_unit_blocks(mb, n, unit_count, hub_carriers)
