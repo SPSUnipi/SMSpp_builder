@@ -181,13 +181,14 @@ jobs:
     - name: Compile SMSpp
       run: |
         cd smspp-project
+        pwd
         mkdir build
         cd build
         cmake ..
         cmake --build . --config Release
         sudo cmake --install . --prefix /opt/smspp
         echo "/opt/smspp/bin" >> $GITHUB_PATH
-        echo "$HOME/smspp-project/build/InvestmentBlock/test/InvestmentBlock_test" >> $GITHUB_PATH
+        echo "$GITHUB_WORKSPACE/smspp-project/build/InvestmentBlock/test/InvestmentBlock_test" >> $GITHUB_PATH
 
     - name: Test SMSpp - UCBlockSolver
       run: |
