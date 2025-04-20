@@ -153,13 +153,6 @@ jobs:
               --skip-dependencies \
               --prefix=/opt/coin-or \
               --tests=none
-          
-
-        # CPLEX_LIB_DIR=`ls -bd1 $CPLEX_HOME/cplex/lib/*/static_pic | tail -n1`
-        # CPLEX_INCLUDE_DIR="$CPLEX_HOME/cplex/include/ilcplex"
-        # --with-cplex \
-        # --with-cplex-lib="-L$CPLEX_LIB_DIR -lcplex -lpthread -lm -ldl" \
-        # --with-cplex-incdir="$CPLEX_INCLUDE_DIR" \
     
     - name: Install StOpt
       run: |
@@ -181,7 +174,6 @@ jobs:
     - name: Compile SMSpp
       run: |
         cd smspp-project
-        pwd
         mkdir build
         cd build
         cmake ..
@@ -195,8 +187,6 @@ jobs:
       run: |
         cd ./smspp-project/tools/ucblock_solver/examples
         ucblock_solver thermalunit_block.nc4 -S uc_solverconfig.txt
-      # chmod u+x ../../../build/tools/ucblock_solver/ucblock_solver
-      # ../../../build/tools/ucblock_solver/ucblock_solver thermalunit_block.nc4 -S uc_solverconfig.txt
 
     - name: Test SMSpp - InvestmentBlockTest
       run: |
