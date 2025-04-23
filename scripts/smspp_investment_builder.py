@@ -32,8 +32,10 @@ from smspp_dispatch_builder import (
     add_unit_block,
 )
 
-OBJ_ORDER=["Generator", "StorageUnit", "Link", "Line", "Store"]
+OBJ_ORDER=["Generator", "Store", "StorageUnit", "Link", "Line"]
 NETWORK_ASSETS = ["Line", "Link"]
+
+CARRIER_ORDER=["diesel", "pv", "wind", "curtailment", "battery", "hydro"]
 
 def get_bus_idx(n, bus_series, dtype="uint32"):
     """
@@ -429,10 +431,18 @@ def get_param_list(dict_objs, col, max_val=1e6):
     return lvals
 
 def get_extendable_dict(n, exclude_carriers=[]):
+    def _sort_order(x):
+        carrier_sort = {carrier: id for id, carrier in enumerate(CARRIER_ORDER)}
+        if x in carrier_sort.keys():
+            return carrier_sort[x]
+        else:
+            return max(carrier_sort.values()) + 1
+    
     # get the extendable objects
     dict_extendable = {
         obj: (
             n.df(obj)
+            .sort_values(by=["carrier"], key=lambda x: x.map(lambda y: _sort_order(y)))
             .reset_index()
             .rename(columns={obj: "name"})
             .query(f"carrier not in {exclude_carriers}")

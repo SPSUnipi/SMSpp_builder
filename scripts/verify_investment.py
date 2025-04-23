@@ -77,9 +77,6 @@ if __name__ == "__main__":
     error_flag = error_flag_abs and error_flag_rel
 
     if error_flag:
-        # raise Exception("Verification failed")
-        logger.error("Verification failed")
-        if not np.isfinite(smspp_obj):
-            raise Exception("Verification failed strictly: SMS++ has not converged")
+        raise Exception("Verification failed")
     else:
         logger.info("Verification successful")
