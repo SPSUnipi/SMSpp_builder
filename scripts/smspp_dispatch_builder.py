@@ -574,7 +574,7 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
             if row.cyclic_state_of_charge:
                 initial_volumetric[:] = -1.
             else:
-                initial_volumetric[:] = row.state_of_charge_initial * row.max_hours * row.p_nom_opt
+                initial_volumetric[:] = row.state_of_charge_initial
 
             # NumberPieces
             pieces = np.full((N_ARCS,), 1, dtype=NP_UINT)
