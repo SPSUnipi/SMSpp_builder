@@ -136,6 +136,11 @@ rule run_all_investment:
                 stdout=sys.stdout,
             )
 
+rule verify_all:
+    input:
+        "results/microgrid" + SNAME + "_complete.txt",
+        "results/microgrid" + SNAME + "_investment_complete.txt",
+
 rule dag:
     output:
         dot="results/plots/dag/dag.dot",
@@ -143,7 +148,7 @@ rule dag:
         png="results/plots/dag/dag.png",
     shell:
         r"""
-        snakemake --rulegraph verify_dispatch | sed -n "/digraph/,\$p" > {output.dot}
+        snakemake --rulegraph verify_all | sed -n "/digraph/,\$p" > {output.dot}
         dot -Tpdf -o {output.pdf} {output.dot}
         dot -Tpng -o {output.png} {output.dot}
         """
