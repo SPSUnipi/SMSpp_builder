@@ -10,7 +10,7 @@ dependencies:
   - snakemake-minimal
   # - asyncore  #
 
-  - numpy
+  - numpy<2
   - pandas
   - matplotlib
 
