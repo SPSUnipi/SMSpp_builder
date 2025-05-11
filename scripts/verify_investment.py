@@ -32,6 +32,22 @@ def get_capital_costs(n):
     )
     return cap_cost
 
+def get_investment_result(fp_n):
+    """
+    Get the investment result from the network.
+    """
+    # Read PyPSA and get marginal costs
+    n = pypsa.Network(fp_n)
+    pypsa_obj = n.objective
+
+    # Read SMS++ output and get objective value
+    with open(snakemake.input.smspp_log, "r") as f:
+        smspp_log = f.read()
+    
+    res = re.search("Solution value: (.*)\n", smspp_log)
+    smspp_obj = float(res.group(1).replace("\r", ""))
+    return pypsa_obj, smspp_obj
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from helpers import mock_snakemake
@@ -42,25 +58,17 @@ if __name__ == "__main__":
     logger = create_logger("verify_investment", logfile=snakemake.log[0])
     
     tolerances = snakemake.params.tolerances
-    
-    # Read PyPSA and get marginal costs
-    n = pypsa.Network(snakemake.input.pypsa_network)
-    obj = n.objective
 
-    # Read SMS++ output and get objective value
-    with open(snakemake.input.smspp_log, "r") as f:
-        smspp_log = f.read()
-    
-    res = re.search("Solution value: (.*)\n", smspp_log)
-    smspp_obj = float(res.group(1).replace("\r", ""))
+    # get results
+    pypsa_obj, smspp_obj = get_investment_result(snakemake.input.pypsa_network)
 
     # check tolerances
-    err_relative = (smspp_obj - obj)/(obj + 1e-6)
-    err_absolute = (smspp_obj - obj)
+    err_relative = (smspp_obj - pypsa_obj)/(pypsa_obj + 1e-6)
+    err_absolute = (smspp_obj - pypsa_obj)
 
     # Print results
     logger.info("SMS++ obj                             : %.6f" % smspp_obj)
-    logger.info("PyPSA obj                             : %.6f" % obj)
+    logger.info("PyPSA obj                             : %.6f" % pypsa_obj)
     logger.info("Relative difference SMS++ - PyPSA [%%]: %.5f" % (100*err_relative))
     logger.info("Absolute difference SMS++ - PyPSA [€] : %.5f" % (err_absolute))
 

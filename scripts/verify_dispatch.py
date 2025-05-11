@@ -32,20 +32,13 @@ def get_capital_costs(n):
     )
     return cap_cost
 
-if __name__ == "__main__":
-    if "snakemake" not in globals():
-        from helpers import mock_snakemake
-
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("verify_dispatch", configfiles=["configs/ALL_4N.yaml"])
-    
-    logger = create_logger("verify_dispatch", logfile=snakemake.log[0])
-    
-    tolerances = snakemake.params.tolerances
-    
+def get_dispatch_result(fp_n):
+    """
+    Get the dispatch result from the network.
+    """
     # Read PyPSA and get marginal costs
-    n = pypsa.Network(snakemake.input.pypsa_network)
-    marg_cost = get_marginal_costs(n)
+    n = pypsa.Network(fp_n)
+    pypsa_obj = get_marginal_costs(n).sum()
 
     # Read SMS++ output and get objective value
     with open(snakemake.input.smspp_log, "r") as f:
@@ -53,14 +46,28 @@ if __name__ == "__main__":
     
     res = re.search("Upper bound = (.*)\n", smspp_log)
     smspp_obj = float(res.group(1).replace("\r", ""))
+    return pypsa_obj, smspp_obj
+
+if __name__ == "__main__":
+    if "snakemake" not in globals():
+        from helpers import mock_snakemake
+
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+        snakemake = mock_snakemake("verify_dispatch", configfiles=["configs/ALL_5N.yaml"])
+    
+    logger = create_logger("verify_dispatch", logfile=snakemake.log[0])
+    
+    tolerances = snakemake.params.tolerances
+    
+    pypsa_obj, smspp_obj = get_dispatch_result(snakemake.input.pypsa_network)
 
     # check tolerances
-    err_relative = (smspp_obj - marg_cost.sum())/(marg_cost.sum() + 1e-6)
-    err_absolute = (smspp_obj - marg_cost.sum())
+    err_relative = (smspp_obj - pypsa_obj)/(pypsa_obj + 1e-6)
+    err_absolute = (smspp_obj - pypsa_obj)
 
     # Print results
     logger.info("SMS++ obj                             : %.6f" % smspp_obj)
-    logger.info("PyPSA dispatch obj                    : %.6f" % marg_cost.sum())
+    logger.info("PyPSA dispatch obj                    : %.6f" % pypsa_obj)
     logger.info("Relative difference SMS++ - PyPSA [%%]: %.5f" % (100*err_relative))
     logger.info("Absolute difference SMS++ - PyPSA [€] : %.5f" % (err_absolute))
 
