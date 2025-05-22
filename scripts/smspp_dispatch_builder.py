@@ -561,7 +561,7 @@ def add_hydro_unit_blocks(mb, n, unit_count, hub_carriers):
 
             # MaxVolumetric
             max_volumetric = tiub.createVariable("MaxVolumetric", NC_DOUBLE)
-            max_volumetric[:] = row.p_nom_opt * row.max_hours
+            max_volumetric[:] = row.p_nom_opt * row.max_hours / n.snapshot_weightings.stores.iloc[0]
 
             
             # Inflows
