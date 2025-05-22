@@ -153,7 +153,7 @@ def add_network(
         battery_units += list(n.stores[n.stores.index.isin(bub_carriers)].bus.str[4:].astype(int).values)
         hydro_units = n.storage_units[n.storage_units.index.isin(hub_carriers)]
         all_generators += battery_units
-        all_generators += list(np.repeat(hydro_units.bus.str[4:].astype(int).values, 3))  # each hydro unit has 3 arcs
+        all_generators += list(np.repeat(hydro_units.bus.str[4:].astype(int).values, 2))  # each hydro unit has 2 arcs
         all_generators = [x for x in all_generators if x is not None]
 
         mb.createDimension("NumberLines", len(n.lines)+len(n.links)+len(n.transformers))  # Number of lines
