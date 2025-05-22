@@ -618,7 +618,7 @@ if __name__ == "__main__":
 
     n_hydro = hydro_systems = n.storage_units.loc[n.storage_units.index.isin(hub_carriers)].shape[0]
 
-    n_elec_gens = n_generators + 2 * n_hydro
+    n_elec_gens = n_generators + n_hydro  # hydro has 2 arcs so another + n_hydro here
 
     unit_count = 0
 
