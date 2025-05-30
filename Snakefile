@@ -64,25 +64,27 @@ rule smspp_dispatch_optimizer:
     input:
         smspp_file="resources/smspp/microgrid" + SNAME + ".nc4",
         configdir="data/SMSpp/UCBlockSolver/",
-        config="data/SMSpp/UCBlockSolver/uc_solverconfig.txt",
+    params:
+        config="uc_solverconfig.txt",
     output:
         "results/smspp/microgrid" + SNAME + "_optimized.txt"
     log:
         "logs/smspp_dispatch_optimizer" + SNAME + ".log"
     shell:
-        "ucblock_solver {input.smspp_file} -c {input.configdir} -S {input.config} >> {output}"
+        "ucblock_solver {input.smspp_file} -c data/SMSpp/UCBlockSolver/ -S {params.config} -v >> {output}"
 
 rule smspp_investment_optimizer:
     input:
         smspp_file="resources/smspp/microgrid" + SNAME + "_investment.nc4",
         configdir="data/SMSpp/InvestmentBlockTest/config",
-        config="data/SMSpp/InvestmentBlockTest/config/BSPar.txt",
+    params:
+        config="BSPar.txt",
     output:
         "results/smspp/microgrid" + SNAME + "_investment_optimized.txt"
     log:
         "logs/smspp_dispatch_optimizer" + SNAME + ".log"
     shell:
-        "InvestmentBlock_test {input.smspp_file} -c {input.configdir}/ -S {input.config} >> {output}"
+        "InvestmentBlock_test {input.smspp_file} -c {input.configdir}/ -S {params.config} -v >> {output}"
 
 rule verify_dispatch:
     params:
