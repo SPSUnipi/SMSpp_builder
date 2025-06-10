@@ -84,7 +84,7 @@ rule smspp_investment_optimizer:
     log:
         "logs/smspp_dispatch_optimizer" + SNAME + ".log"
     shell:
-        "InvestmentBlock_test {input.smspp_file} -c {input.configdir}/ -S {params.config} -v >> {output}"
+        "InvestmentBlock_test {input.smspp_file} -c {input.configdir}/ -S {params.config} -v -o >> {output}"
 
 rule verify_dispatch:
     params:
