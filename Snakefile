@@ -23,7 +23,7 @@ rule microgrid_builder:
     script:
         "scripts/microgrid_builder.py"
 
-rule mirogrid_optimizer:
+rule microgrid_optimizer:
     params:
         solver_name = config['solver_name'],
         solver_options = config.get('solver_options', {}),
