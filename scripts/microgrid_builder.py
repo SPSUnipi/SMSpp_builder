@@ -209,8 +209,8 @@ def build_microgrid_model(
             "battery",
             bus=f"Bus {bus_store}",
             carrier="battery",
-            p_nom_extendable=True,
-            capital_cost=assumptions.at["battery", "capital_cost"],
+            e_nom_extendable=True,
+            capital_cost=assumptions.at["battery", "capital_cost"]*4/5,  # assumption: 80% cost of cell, 20% cost of converter
             e_initial=0.,
             e_cyclic=e_cycling,
         )
@@ -218,14 +218,27 @@ def build_microgrid_model(
         n.add(
             "Link",
             "battery link",
-            carrier = "battery link",
+            carrier = "battery discharger",
             bus0 = f"Bus {bus_store}",
             bus1 = f"Bus {bus_store-1}",
-            p_min_pu = -1,
+            p_min_pu = 0,
             p_max_pu = 1,
-            capital_cost=assumptions.at["battery", "capital_cost"],
+            capital_cost=assumptions.at["battery", "capital_cost"]/10,
             marginal_cost=assumptions.at["battery", "OPEX_marginal"],
-            efficiency = 1,
+            efficiency = 0.9,
+            p_nom_extendable = True
+        )
+
+        n.add(
+            "Link",
+            "battery charger",
+            carrier = "battery link",
+            bus0 = f"Bus {bus_store-1}",
+            bus1 = f"Bus {bus_store}",
+            p_min_pu = 0,
+            p_max_pu = 1,
+            capital_cost=assumptions.at["battery", "capital_cost"]/10,
+            efficiency = 1.,
             p_nom_extendable = True
         )
 

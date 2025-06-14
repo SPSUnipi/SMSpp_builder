@@ -169,7 +169,7 @@ jobs:
 
     - name: Clone SMSpp
       run: |
-        git clone -b develop --recurse-submodules https://gitlab.com/smspp/smspp-project.git
+        git clone -b test_win --recurse-submodules https://gitlab.com/davide-f/smspp-project.git
     
     - name: Compile SMSpp
       run: |

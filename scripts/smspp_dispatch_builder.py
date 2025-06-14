@@ -184,13 +184,21 @@ def add_network(
             n.links.p_nom_opt.values * n.links.p_min_pu.values,
             - n.transformers.s_nom_opt,
         ])
-        
+
         # Max power flow
         max_power_flow = mb.createVariable("MaxPowerFlow", NC_DOUBLE, ("NumberLines",))
         max_power_flow[:] = np.concatenate([
             n.lines.s_nom_opt.values,
             n.links.p_nom_opt.values * n.links.p_max_pu.values,
             n.transformers.s_nom_opt.values,
+        ])
+        
+        # Efficiency
+        efficiency = mb.createVariable("Efficiency", NC_DOUBLE, ("NumberLines",))
+        efficiency[:] = np.concatenate([
+            np.full(len(get_bus_idx(n, n.lines.bus1).values), 1.0),
+            n.links.efficiency.values,
+            np.full(len(get_bus_idx(n, n.transformers.bus1).values), 1.0),
         ])
 
         # Susceptance
@@ -372,8 +380,8 @@ def get_battery_blocks(n, id_initial, bub_carriers):
                 "MinStorage": 0.0,
                 "MaxStorage": row.p_nom_opt * row.max_hours,
                 "InitialStorage": init_store,
-                "StoringBatteryRho": row.efficiency_store,
-                "ExtractingBatteryRho": row.efficiency_dispatch,
+                "StoringBatteryRho": 1/row.efficiency_store,
+                "ExtractingBatteryRho": 1/row.efficiency_dispatch,
             }
         )
         id_battery += 1
@@ -389,7 +397,7 @@ def get_battery_blocks(n, id_initial, bub_carriers):
             {
                 "id": id_battery,
                 "block_type": "BatteryUnitBlock",
-                "MinPower": (row.e_nom_opt * e_min_pu.loc[:, idx_name]).values * 10,
+                "MinPower": - (row.e_nom_opt * e_max_pu.loc[:, idx_name]).values * 10,
                 "MaxPower": (row.e_nom_opt * e_max_pu.loc[:, idx_name]).values * 10,
                 "MinStorage": 0.0,
                 "MaxStorage": row.e_nom_opt,
@@ -600,7 +608,7 @@ if __name__ == "__main__":
         from helpers import mock_snakemake
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/ALLbuthydro_5N.yaml"])
+        snakemake = mock_snakemake("smspp_dispatch_builder", configfiles=["configs/S_2N.yaml"])
     
     logger = create_logger("smspp_dispatch_builder", logfile=snakemake.log[0])
 
